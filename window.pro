@@ -23,8 +23,8 @@ EXPORTWINDOW = \
 target.path = EXPORTWINDOW/window
 INSTALLS += target
 
-ICON = resources/icon64.png
-macx: ICON = resources/icon.icns
+RC_ICONS = resources/icon.ico
+ICON = resources/icon.ico
 win32: RC_FILE = resources/window.rc
 
 HEADERS += \

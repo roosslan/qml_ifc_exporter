@@ -2,43 +2,27 @@ import QtQuick
 import "shared/"
 import QtQuick.Dialogs
 import QtQuick.Controls
+import QtQuick.Layouts
+import QtQuick.Window
 
 Item {
     property real defaultSpacing: 10
-
+    property real topOffset: 10
     signal qmlSignal(msg: string)
     signal selectedFileSignal(fname: string)
 
-    id: mainWindow
-    width: 1300
-    height: 800
+    id: mainWindow;
+    width: 1300;
+    height: 870;
 
     Rectangle {
+
         y: 5
         x: 10
-        radius: 20
-        height: 700
+
+        height: 750;
         anchors.fill: parent
         anchors.margins: defaultSpacing
-
-        CustomBorderRect
-        {
-            id: borderRect
-            anchors.top: btnAddLocalProject.bottom
-            anchors.margins: 10
-            anchors.left: parent.left
-            width : 800
-            height: 650
-            color: "white"
-
-            lBorderwidth: 1
-            rBorderwidth: 1
-            tBorderwidth: 1
-            bBorderwidth: 1
-            borderColor: "black"
-        }
-
-
 
         RoundButton {
             id: btnAddLocalProject
@@ -48,9 +32,83 @@ Item {
                 margins: defaultSpacing
             }
             text: "Добавить локальный проект"
-            height: 22
-            width: 800
+            height: 22;
+            width: 800;
             onClicked: fileDialog.open();
+        }
+
+        Row
+        {
+            id: theTextBoxRow;
+            anchors.top: btnAddLocalProject.bottom;
+            anchors.left: btnAddLocalProject.left;
+            anchors.topMargin: 10;
+            spacing: 25;
+            TextField
+            {
+                id: rsnEditBox;
+
+                width: btnAddLocalProject.width-50;
+                text: "RSN://ALD-SRV-B01/Projects/";
+            }
+        }
+        Image
+        {
+            source: "resources/plus.png";
+            anchors.right: btnAddLocalProject.right;
+            anchors.top: theTextBoxRow.top;
+            width: 15;
+            height: 15;
+            MouseArea
+            {
+                anchors.fill: parent
+                //onClicked: listModel.remove(index)
+            }
+        }
+
+        CustomBorderRect
+        {
+            id: borderRect;
+            anchors.top: theTextBoxRow.bottom;
+            anchors.margins: 10;
+            anchors.left: parent.left;
+            width : 800;
+            height: 550;
+            color: "white";
+
+            lBorderwidth: 1
+            rBorderwidth: 1
+            tBorderwidth: 1
+            bBorderwidth: 1
+            borderColor: "black"
+        }
+
+        CustomBorderRect
+        {
+            id: logFrame
+            y: 10;
+            anchors.margins: 10
+            anchors.left: borderRect.right
+            width : 450
+            height: 840
+            color: "white"
+
+            lBorderwidth: 1
+            rBorderwidth: 1
+            tBorderwidth: 1
+            bBorderwidth: 1
+            borderColor: "black"
+        }
+
+        Label {
+            id: labelLog;
+            x: 1000;
+            anchors.top: btnAddLocalProject.top;
+            Text
+            {
+                text: "Журнал";
+                font.pixelSize: 18;
+            }
         }
 
         ListView {
@@ -59,24 +117,31 @@ Item {
             anchors.top: borderRect.top
             anchors.margins: 10
             anchors.left: parent.left
-            height: 600
+            height: 500
             width: 600
 
-            delegate: Column {
-                id: horizCol
+            delegate:
+            Column
+            {
+                id: horizCol                
                 Text
                 {
-                    x: 5
                     id: rowText
-                    text: path }
-                Button
+                    x: 10;
+                    text: path
+                }
+                Image
                 {
-                    x: 750
-                    y: y - 15
-                    width: 15
-                    height: 15
-                    text: "X"
-                    onClicked: listModel.remove(index)
+                    source: "resources/trash.png";
+                    x: 765;
+                    //y: y - 15
+                    width: 15;
+                    height: 15;
+                    MouseArea
+                    {
+                        anchors.fill: parent
+                        onClicked: listModel.remove(index)
+                    }
                 }
             }
 
@@ -94,14 +159,42 @@ Item {
                         path: "RSN:"
                     }
                 }
-
         }
 
+        ListView {
+            id: lvLog
+            anchors.top: logFrame.top
+            anchors.margins: 10
+            anchors.left: logFrame.left
+            height: 750
+            width: 600
 
-        RoundButton {
+            delegate:
+                Text
+                {
+                    x: 5
+                    id: rowTxt
+                    text: msg
+                }
+
+
+                model: ListModel
+                {
+                    id: lmModel
+                    ListElement
+                    {
+                        msg: "Подготовка к выгрузке"
+                    }
+                    ListElement
+                    {
+                        msg: "Ожидаем..."
+                    }
+                }
+        }
+
+        RoundButton
+        {
             id: btnSaveTrueToConfig
-//            x: 0;
-//            y: 54
             anchors.right: parent.right
             anchors.bottom: parent.bottom
             anchors.margins: defaultSpacing
@@ -112,7 +205,8 @@ Item {
         }
 
 
-        RoundButton {
+        RoundButton
+        {
             id: btnStop;
             anchors.right: btnSaveTrueToConfig.left;
             anchors.bottom: parent.bottom;
@@ -122,54 +216,295 @@ Item {
             height: 45;
             onClicked: qmlSignal(mainWindow);
         }
+/************************************* Настройки экспорта ************************************/
 
         Label {
             id: labelExportSettings;
-            anchors.left: borderRect.left;
+            x: 35
             anchors.top: borderRect.bottom;
             text: "Настройки экспорта";
         }
 
-        Path
-        {
-            startX: 60;
-            startY: 300;
-            PathLine
-            {
-                x: 200;
-                y: 300
+        ColumnLayout {
+            anchors.top: labelExportSettings.verticalCenter;
+            x: 10;
+            Rectangle {
+                id: lineSettings;
+                width: 20;
+                Layout.fillWidth: true;
+                Layout.preferredHeight: 1;
+                color: "black";
             }
         }
 
-        ComboBox {
-            id: cbVersion
-            editable: false;
-            anchors.left: labelExportSettings.left;
+        ColumnLayout {
+           anchors.top: labelExportSettings.verticalCenter;
+            x: 155;
+            Rectangle {
+                width: 655;
+                Layout.fillWidth: true;
+                Layout.preferredHeight: 1;
+                color: "black";
+            }
+        }
+/************************************* Настройки экспорта ************************************/
+
+
+/************************************* Версия Revit ******************************************/
+        Row
+        {
+            id: horizRow;
             anchors.top: labelExportSettings.bottom;
-            model: ListModel
+            anchors.left: borderRect.left;
+            anchors.topMargin: 5;
+            Label
             {
-                id: revitVersion;
-                ListElement { text: "2022" }
-                ListElement { text: "2023" }
+                id: labelRevitVersion;
+                anchors.top: labelExportSettings.bottom;
+                text: "Версия Revit:";
             }
-            // onAccepted: {      model.append({text: editText})        }
+
+            ComboBox {
+                id: cbVersion;
+                editable: false;
+                anchors.left: labelRevitVersion.right;
+                anchors.leftMargin: 10;
+                anchors.top: labelExportSettings.bottom;
+                model: ListModel
+                {
+                    id: revitVersion;
+                    ListElement { text: "2022" }
+                    ListElement { text: "2023" }
+                }
+                // onAccepted: {      model.append({text: editText})        }
+            }
+        }
+/************************************* Версия Revit ******************************************/
+
+/************************************* Время выгрузки ****************************************/
+        Row
+        {
+            id: horizonRow;
+//            x: 5;
+            anchors.top: horizRow.bottom;
+            anchors.topMargin: 25;
+            anchors.left: horizRow.left;
+            Label
+            {
+                id: labelTime;
+                text: "Время выгрузки";
+            }
         }
 
-        Label
-        {
-            id: labelIFC
-            anchors.left: borderRect.left;
-            anchors.top: cbVersion.bottom;
-            text: "Industry Foundation Classes";
+        UTimePicker{
+            anchors.top: horizRow.top;
+//            anchors.topMargin: 25;
+            x: 400;
+            width: 200
+            //spacing: 10
+            size: Qt.size(20,40)
+//            caption: "time"
+            onChanged: {
+                var i =  getTime()
+//                console.log(i.hour)
+//                console.log(i.minute)
+            }
+
         }
+/************************************* Время выгрузки ****************************************/
+
+/******************************* Industry Foundation Classes **********************************/
+
+
+        CheckBox
+        {
+            id: cbIFC;
+            anchors.top: horizonRow.bottom;
+            anchors.topMargin: 5;
+            x: 35
+            checked: true;
+            text: "Industry Foundation Classes (IFC)";
+        }
+
+        ColumnLayout
+        {
+            anchors.top: cbIFC.verticalCenter;
+            x: 10;
+            Rectangle
+            {
+                id: lineIFC;
+                width: 20;
+                Layout.fillWidth: true;
+                Layout.preferredHeight: 1;
+                color: "black";
+            }
+        }
+
+        ColumnLayout
+        {
+            id: line_cb_IFC_col;
+            anchors.top: cbIFC.verticalCenter;
+            x: 250;
+            Rectangle
+            {
+                id: line_cb_IFC
+                width: 555;
+                Layout.fillWidth: true;
+                Layout.preferredHeight: 1;
+                color: "black";
+            }
+        }
+
+        ColumnLayout
+        {
+            id: horizIFC_Col_text;
+            x: 30
+            anchors.topMargin: 10;
+            anchors.top: cbIFC.bottom;
+            Label
+            {
+                id: labelIFCPath;
+                text: "C:\\MyDocs";
+            }
+        }
+
+        ColumnLayout
+        {
+            id: btnBrowseFolderCol;
+            anchors.top: cbIFC.bottom;
+            anchors.right: borderRect.right;
+            RoundButton
+            {
+                id: btnBrowseFolder;
+                text: "...";
+                width: 15
+                height: 15
+                onClicked: qmlSignal(mainWindow)
+            }
+        }
+/******************************* Industry Foundation Classes **********************************/
+
+/************************************************ Версия IFC **********************************/
+
+        Row
+        {
+            id: hRow;
+            anchors.top: btnBrowseFolderCol.bottom;
+            anchors.left: borderRect.left;
+            anchors.topMargin: 5;
+            Label
+            {
+                id: labelIFCVersion;
+                anchors.top: horizIFC_Col_text.bottom;
+                text: "Версия IFC:";
+            }
+
+            ComboBox {
+                id: cbIFCVersion;
+                editable: false;
+                anchors.left: labelIFCVersion.right;
+                anchors.leftMargin: 10;
+                anchors.top: labelIFCVersion.top;
+                model: ListModel
+                {
+                    id: revitIFCVersion;
+                    ListElement { text: "Default" }
+                    ListElement { text: "IFCBCA" }
+                    ListElement { text: "IFC2x2" }
+                    ListElement { text: "IFC2x3" }
+                    ListElement { text: "IFCCOBIE" }
+                    ListElement { text: "IFC2x3CV2" }
+                    ListElement { text: "IFC2x3FM" }
+                    ListElement { text: "IFC2x3BFM" }
+                    ListElement { text: "IFC4" }
+                    ListElement { text: "IFC4DTV" }
+                    ListElement { text: "IFC4RV" }
+
+                }
+                // onAccepted: {      model.append({text: editText})        }
+            }
+        }
+
+/************************************************ Версия IFC **********************************/
+
+
+/******************************* Navisworks **********************************/
+
+                CheckBox
+                {
+                    id: cbNavi;
+                    anchors.top: hRow.bottom;
+                    anchors.topMargin: 20;
+                    x: 35
+                    checked: true;
+                    text: "Navisworks";
+                }
+
+                ColumnLayout
+                {
+                    anchors.top: cbNavi.verticalCenter;
+                    x: 10;
+                    Rectangle
+                    {
+                        id: lineNavi;
+                        width: 20;
+                        Layout.fillWidth: true;
+                        Layout.preferredHeight: 1;
+                        color: "black";
+                    }
+                }
+
+                ColumnLayout
+                {
+                    id: line_cb_Navi_col;
+                    anchors.top: cbNavi.verticalCenter;
+                    x: 180;
+                    Rectangle
+                    {
+                        id: line_cb_Navi
+                        width: 600;
+                        Layout.fillWidth: true;
+                        Layout.preferredHeight: 1;
+                        color: "black";
+                    }
+                }
+
+                ColumnLayout
+                {
+                    id: horizNavi_Col_text;
+                    x: 30
+                    anchors.topMargin: 10;
+                    anchors.top: cbNavi.bottom;
+                    Label
+                    {
+                        id: labelNaviPath;
+                        text: "C:\\MyDocs";
+                    }
+                }
+
+                ColumnLayout
+                {
+                    id: btnBrowseFolderNaviCol;
+                    anchors.top: cbNavi.bottom;
+                    anchors.right: borderRect.right;
+                    RoundButton
+                    {
+                        id: btnBrowseFolderNavi;
+                        text: "...";
+                        width: 15
+                        height: 15
+                        onClicked: qmlSignal(mainWindow)
+                    }
+                }
+/******************************* Navisworks **********************************/
 
         FileDialog{
                 id: fileDialog;
                 title: "Please choose a file";
-                nameFilters: ["Revit Files (*.rvt *.png *.gif)"];
+                nameFilters: ["Revit Files (*.rvt *.ifc)"];
                 onAccepted: {
                     selectedFileSignal(fileDialog.selectedFile.toString());
-                    listModel.append(btnAddLocalProject);
+
                     listModel.append({"path": fileDialog.selectedFile.toString() })
                     fileDialog.selectedFile = "";
                     fileDialog.close()
@@ -184,7 +519,7 @@ Item {
         title: "Splash Window";
         modality: Qt.ApplicationModal;
         flags: Qt.SplashScreen;
-        property int timeoutInterval: 2000;
+        property int timeoutInterval: 300;
         signal timeout;
     //! [splash-properties]
     //! [screen-properties]
@@ -202,7 +537,7 @@ Item {
             }
         }
 
-        function exit() {
+        function exit() {            
             mainWindow.visible = true
             splash.visible = false
             splash.timeout()

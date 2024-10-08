@@ -18,11 +18,12 @@ Item
         id: borderRect
         anchors.fill: parent
 
+
         Rectangle
         {
             id: innerRect
             anchors {
-                fill: parent                
+                fill: parent
                 leftMargin: lBorderwidth
                 rightMargin: rBorderwidth
                 topMargin: tBorderwidth
