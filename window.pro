@@ -32,7 +32,6 @@ HEADERS += \
 
 DISTFILES += \
     CustomBorderRect.qml \
-    TimePicker.qml \
     main.qml
 
 CONFIG += qmltypes

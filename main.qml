@@ -15,14 +15,15 @@ Item {
     width: 1300;
     height: 870;
 
+
     Rectangle {
 
         y: 5
         x: 10
 
         height: 750;
-        anchors.fill: parent
-        anchors.margins: defaultSpacing
+        anchors.fill: parent;
+        anchors.margins: defaultSpacing;
 
         RoundButton {
             id: btnAddLocalProject
@@ -76,28 +77,28 @@ Item {
             height: 550;
             color: "white";
 
-            lBorderwidth: 1
-            rBorderwidth: 1
-            tBorderwidth: 1
-            bBorderwidth: 1
-            borderColor: "black"
+            lBorderwidth: 1;
+            rBorderwidth: 1;
+            tBorderwidth: 1;
+            bBorderwidth: 1;
+            borderColor: "black";
         }
 
         CustomBorderRect
         {
-            id: logFrame
+            id: logFrame;
             y: 10;
-            anchors.margins: 10
-            anchors.left: borderRect.right
-            width : 450
-            height: 840
-            color: "white"
+            anchors.margins: 10;
+            anchors.left: borderRect.right;
+            width : 460;
+            height: 840;
+            color: "white";
 
-            lBorderwidth: 1
-            rBorderwidth: 1
-            tBorderwidth: 1
-            bBorderwidth: 1
-            borderColor: "black"
+            lBorderwidth: 1;
+            rBorderwidth: 1;
+            tBorderwidth: 1;
+            bBorderwidth: 1;
+            borderColor: "black";
         }
 
         Label {
@@ -112,13 +113,13 @@ Item {
         }
 
         ListView {
-            id: lvMain
-            objectName: "objLVItem"
-            anchors.top: borderRect.top
-            anchors.margins: 10
-            anchors.left: parent.left
-            height: 500
-            width: 600
+            id: lvMain;
+            objectName: "objLVItem";
+            anchors.top: borderRect.top;
+            anchors.margins: 10;
+            anchors.left: parent.left;
+            height: 500;
+            width: 600;
 
             delegate:
             Column
@@ -126,7 +127,7 @@ Item {
                 id: horizCol                
                 Text
                 {
-                    id: rowText
+                    id: rowText;
                     x: 10;
                     text: path
                 }
@@ -134,7 +135,6 @@ Item {
                 {
                     source: "resources/trash.png";
                     x: 765;
-                    //y: y - 15
                     width: 15;
                     height: 15;
                     MouseArea
@@ -172,7 +172,7 @@ Item {
             delegate:
                 Text
                 {
-                    x: 5
+                    x: 5;
                     id: rowTxt
                     text: msg
                 }
@@ -281,14 +281,14 @@ Item {
         }
 /************************************* Версия Revit ******************************************/
 
+
 /************************************* Время выгрузки ****************************************/
         Row
         {
             id: horizonRow;
-//            x: 5;
             anchors.top: horizRow.bottom;
             anchors.topMargin: 25;
-            anchors.left: horizRow.left;
+            x: 90;
             Label
             {
                 id: labelTime;
@@ -298,18 +298,16 @@ Item {
 
         UTimePicker{
             anchors.top: horizRow.top;
-//            anchors.topMargin: 25;
-            x: 400;
-            width: 200
-            //spacing: 10
-            size: Qt.size(20,40)
-//            caption: "time"
-            onChanged: {
+            anchors.topMargin: 10;
+            x: 230;
+            width: 180;             // Font Size <-> depends!
+            size: Qt.size(10, 40);
+            onChanged:
+            {
                 var i =  getTime()
-//                console.log(i.hour)
-//                console.log(i.minute)
+                // console.log(i.hour)
+                // console.log(i.minute)
             }
-
         }
 /************************************* Время выгрузки ****************************************/
 
@@ -321,7 +319,7 @@ Item {
             id: cbIFC;
             anchors.top: horizonRow.bottom;
             anchors.topMargin: 5;
-            x: 35
+            x: 35;
             checked: true;
             text: "Industry Foundation Classes (IFC)";
         }
@@ -347,7 +345,7 @@ Item {
             x: 250;
             Rectangle
             {
-                id: line_cb_IFC
+                id: line_cb_IFC;
                 width: 555;
                 Layout.fillWidth: true;
                 Layout.preferredHeight: 1;
@@ -358,7 +356,7 @@ Item {
         ColumnLayout
         {
             id: horizIFC_Col_text;
-            x: 30
+            x: 30;
             anchors.topMargin: 10;
             anchors.top: cbIFC.bottom;
             Label
@@ -377,9 +375,9 @@ Item {
             {
                 id: btnBrowseFolder;
                 text: "...";
-                width: 15
-                height: 15
-                onClicked: qmlSignal(mainWindow)
+                width: 15;
+                height: 15;
+                onClicked: qmlSignal(mainWindow);
             }
         }
 /******************************* Industry Foundation Classes **********************************/
@@ -461,7 +459,7 @@ Item {
                     x: 180;
                     Rectangle
                     {
-                        id: line_cb_Navi
+                        id: line_cb_Navi;
                         width: 600;
                         Layout.fillWidth: true;
                         Layout.preferredHeight: 1;
