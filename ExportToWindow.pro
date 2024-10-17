@@ -1,3 +1,5 @@
+TARGET = ExportToWindow
+
 TEMPLATE = app
 
 QT += quick qml widgets core gui
@@ -14,18 +16,15 @@ static {
 SOURCES += main.cpp \
     backend.cpp
 RESOURCES += \
-    window.qrc \
+    ExportToWindow.qrc \
     shared\shared.qrc
-EXPORTWINDOW = \
-    window.qml \
-    resources
 
-target.path = EXPORTWINDOW/window
+target.path = EXPORTWINDOW/ExportToWindow
 INSTALLS += target
 
 RC_ICONS = resources/icon.ico
 ICON = resources/icon.ico
-win32: RC_FILE = resources/window.rc
+win32: RC_FILE = resources/ExportToWindow.rc
 
 HEADERS += \
     backend.h

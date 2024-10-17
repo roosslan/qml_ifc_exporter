@@ -4,16 +4,16 @@ import QtQuick.Controls.Universal
 
 Item
 {
-    id: scope
-    clip: true
+    id: scope;
+    clip: true;
+
     QtObject
     {
         id:variables
-        property var time: ({hour: 0, minute: 0})
+        property var time: ( {hour: 0, minute: 0} )
         onTimeChanged:
         {
             refreshDialogTime()
-
         }
     }
 
@@ -21,8 +21,10 @@ Item
     property alias caption : captionTxt.text
     property size size : Qt.size(30,70)
     property string splitter : ":"
-    property alias spacing : row.spacing
-    Component.onCompleted: {
+    property alias spacing : row.spacing;
+
+    Component.onCompleted:
+    {
         var q = new Date()
         var curtime = q.toLocaleTimeString().substring(0,5);
         if(splitter != ":")
@@ -52,27 +54,29 @@ Item
 
     function setTime(hour,minute)
     {
-        var _hour = hour
-        if(_hour<10){
-            _hour = "0"+hour.toString()
+        var _hour = hour;
+        if(_hour < 10)
+        {
+            _hour = "0" + hour.toString();
         }
         else{
-            _hour = hour.toString()
+            _hour = hour.toString();
         }
         var _minute = minute
-        if(_minute <10){
-            _minute = "0"+minute.toString()
+        if(_minute < 10)
+        {
+            _minute = "0" + minute.toString();
         }
         else{
-            _minute = minute.toString()
+            _minute = minute.toString();
         }
 
-        var time = _hour+":"+_minute
-        textArea.text = time
+        var time = _hour + ":" + _minute;
+        textArea.text = time;
     }
 
-    implicitHeight: 50
-    implicitWidth: 200
+    implicitHeight: 50;
+    implicitWidth: 200;
     Row
     {
         id: row
@@ -98,7 +102,7 @@ Item
             id: element;
             anchors.verticalCenter: parent.verticalCenter;
             height: parent.height;
-            width: scope.size.height * scope.width /100 - scope.spacing/2;
+            width: scope.size.height * scope.width/100 - scope.spacing/2;
 
             Rectangle
             {
@@ -133,42 +137,41 @@ Item
                     font.family: "B Nazanin"
 
 /****************THE FONT SIZE ****************************************************************************/
-                    font.pointSize: 8
+                    font.pointSize: 8;
 
-                    selectByMouse: true
-                    anchors.verticalCenter: parent.verticalCenter
+                    selectByMouse: true;
+                    anchors.verticalCenter: parent.verticalCenter;
 
-                    //anchors.left: parent.left
-                    //anchors.right: iconBtn.left
+                    //anchors.left: parent.left;
+                    //anchors.right: iconBtn.left;
 
-                    height: parent.height
-                    bottomPadding: 5
-                    topPadding: 5
-                    verticalAlignment: Text.AlignVCenter
+                    height: parent.height;
+                    bottomPadding: 5;
+                    topPadding: 5;
+                    verticalAlignment: Text.AlignVCenter;
                     onFocusChanged:
                     {
                         if(focus)
                         {
-                            captionTxt.color = Universal.color( Universal.Cobalt)
+                            captionTxt.color = Universal.color( Universal.Cobalt);
                         }
                         else
                         {
-                            captionTxt.color = "black"
+                            captionTxt.color = "black";
                         }
                     }
 
                     background: URect
                     {
-
-                        color: "transparent"
-                        border.width: 0
+                        color: "transparent";
+                        border.width: 0;
                     }
                     onTextChanged: {
-                        var _temp = text.split(splitter)
+                        var _temp = text.split(splitter);
                         if(_temp.length>0)
                         {
-                            variables.time.hour =_temp[0] == ""?0:  _temp[0]
-                            variables.time.minute = _temp[1] == ""?0:_temp[1]
+                            variables.time.hour =_temp[0] == ""?0:  _temp[0];
+                            variables.time.minute = _temp[1] == ""?0:_temp[1];
                         }
                         changed()
                     }

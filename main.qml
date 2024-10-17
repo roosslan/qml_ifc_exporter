@@ -299,9 +299,9 @@ Item {
         UTimePicker{
             anchors.top: horizRow.top;
             anchors.topMargin: 10;
-            x: 230;
-            width: 180;             // Font Size <-> depends!
-            size: Qt.size(10, 40);
+            x: 65;
+            width: 200;             // Font Size <-> depends!
+            size: Qt.size(0, 40);
             onChanged:
             {
                 var i =  getTime()
@@ -346,7 +346,7 @@ Item {
             Rectangle
             {
                 id: line_cb_IFC;
-                width: 555;
+                width: 560;
                 Layout.fillWidth: true;
                 Layout.preferredHeight: 1;
                 color: "black";
@@ -390,6 +390,7 @@ Item {
             anchors.top: btnBrowseFolderCol.bottom;
             anchors.left: borderRect.left;
             anchors.topMargin: 5;
+
             Label
             {
                 id: labelIFCVersion;
@@ -397,7 +398,8 @@ Item {
                 text: "Версия IFC:";
             }
 
-            ComboBox {
+            ComboBox
+            {
                 id: cbIFCVersion;
                 editable: false;
                 anchors.left: labelIFCVersion.right;
@@ -456,11 +458,11 @@ Item {
                 {
                     id: line_cb_Navi_col;
                     anchors.top: cbNavi.verticalCenter;
-                    x: 180;
+                    x: 130;
                     Rectangle
                     {
                         id: line_cb_Navi;
-                        width: 600;
+                        width: 680;
                         Layout.fillWidth: true;
                         Layout.preferredHeight: 1;
                         color: "black";

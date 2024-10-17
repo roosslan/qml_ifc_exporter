@@ -15,14 +15,14 @@ BEGIN
     BEGIN
         BLOCK "000004b0"
         BEGIN
-            VALUE "CompanyName", "The Alabuga Company Ltd"
-            VALUE "FileDescription", "Alabuga Export To"
-            VALUE "FileVersion", "1.0.0.0"
-            VALUE "LegalCopyright", "Copyright (C) 2024 The Alabuga Company Ltd."
-            VALUE "InternalName", "exportTo"
-            VALUE "OriginalFilename", "export.exe"
+            VALUE "CompanyName", "Alabuga.dev Company Ltd"
+            VALUE "FileDescription", "Alabuga.dev WindowExportTo"
+            VALUE "FileVersion", "1.17.10.20"
+            VALUE "LegalCopyright", "Copyright (C) 2021 - 2024 Alabuga.dev"
+            VALUE "InternalName", "exportToWindow"
+            VALUE "OriginalFilename", "exportToWindow.exe"
             VALUE "ProductName", "BIMALDE"
-            VALUE "ProductVersion", "1.0.0.0"
+            VALUE "ProductVersion", "1.17.10.20"
         END
     END
     BLOCK "VarFileInfo"
