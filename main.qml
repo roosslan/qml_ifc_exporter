@@ -6,33 +6,39 @@ import QtQuick.Layouts
 import QtQuick.Window
 
 Item {
-    property real defaultSpacing: 10
-    property real topOffset: 10
-    signal qmlSignal(msg: string)
-    signal selectedFileSignal(fname: string)
+    property real defaultSpacing: 10;
+    property real topOffset: 10;
+    signal qmlSignal(msg: string);
+    signal selectedFileSignal(fname: string);
+    signal signalRunClicked(utime: string);
+    signal escKeyPressedSignal();
 
     id: mainWindow;
     width: 1300;
     height: 870;
 
+    focus: true;
+    Keys.onEscapePressed: escKeyPressedSignal();
 
-    Rectangle {
-
-        y: 5
-        x: 10
+    Rectangle
+    {
+        y: 5;
+        x: 10;
 
         height: 750;
         anchors.fill: parent;
         anchors.margins: defaultSpacing;
 
-        RoundButton {
-            id: btnAddLocalProject
-            anchors {
-                left: parent.left
-                top: parent.top
-                margins: defaultSpacing
+        RoundButton
+        {
+            id: btnAddLocalProject;
+            anchors
+            {
+                left: parent.left;
+                top: parent.top;
+                margins: defaultSpacing;
             }
-            text: "Добавить локальный проект"
+            text: "Добавить локальный проект";
             height: 22;
             width: 800;
             onClicked: fileDialog.open();
@@ -62,8 +68,12 @@ Item {
             height: 15;
             MouseArea
             {
-                anchors.fill: parent
-                //onClicked: listModel.remove(index)
+                anchors.fill: parent;
+                onClicked:
+                {
+                    listModel.append({"path": rsnEditBox.text });
+                    rsnEditBox.text = "";
+                }
             }
         }
 
@@ -101,7 +111,8 @@ Item {
             borderColor: "black";
         }
 
-        Label {
+        Label
+        {
             id: labelLog;
             x: 1000;
             anchors.top: btnAddLocalProject.top;
@@ -112,9 +123,10 @@ Item {
             }
         }
 
-        ListView {
+        ListView
+        {
             id: lvMain;
-            objectName: "objLVItem";
+            objectName: "o_lvMain";
             anchors.top: borderRect.top;
             anchors.margins: 10;
             anchors.left: parent.left;
@@ -124,12 +136,12 @@ Item {
             delegate:
             Column
             {
-                id: horizCol                
+                id: horizCol;
                 Text
                 {
                     id: rowText;
                     x: 10;
-                    text: path
+                    text: path;
                 }
                 Image
                 {
@@ -139,69 +151,76 @@ Item {
                     height: 15;
                     MouseArea
                     {
-                        anchors.fill: parent
-                        onClicked: listModel.remove(index)
+                        anchors.fill: parent;
+                        onClicked: listModel.remove(index);
                     }
                 }
             }
+            model:
+            ListModel
+            {
+                id: listModel;
 
-                model: ListModel { id: listModel
-                    ListElement
-                    {
-                        path: "C:\\Project\\Autodesk"
-                    }
-                    ListElement
-                    {
-                        path: "C:\\Projects\\Revit"
-                    }
-                    ListElement
-                    {
-                        path: "RSN:"
-                    }
+                ListElement
+                {
+                    path: "C:\\Project\\Autodesk";
                 }
+                ListElement
+                {
+                    path: "C:\\Projects\\Revit";
+                }
+                ListElement
+                {
+                    path: "RSN:";
+                }
+            }
         }
 
         ListView {
-            id: lvLog
-            anchors.top: logFrame.top
-            anchors.margins: 10
-            anchors.left: logFrame.left
-            height: 750
-            width: 600
+            id: lvLog;
+            anchors.top: logFrame.top;
+            anchors.margins: 10;
+            anchors.left: logFrame.left;
+            height: 750;
+            width: 600;
 
             delegate:
                 Text
                 {
                     x: 5;
-                    id: rowTxt
+                    id: rowTxt;
                     text: msg
                 }
 
 
                 model: ListModel
                 {
-                    id: lmModel
+                    id: lmModel;
                     ListElement
                     {
-                        msg: "Подготовка к выгрузке"
+                        msg: "Подготовка к выгрузке";
                     }
                     ListElement
                     {
-                        msg: "Ожидаем..."
+                        msg: "Ожидаем...";
                     }
                 }
         }
 
         RoundButton
         {
-            id: btnSaveTrueToConfig
-            anchors.right: parent.right
-            anchors.bottom: parent.bottom
-            anchors.margins: defaultSpacing
-            text: "►"
-            width: 45
-            height: 45
-            onClicked: qmlSignal(mainWindow)
+            id: btnSaveTrueToConfig;
+            anchors.right: parent.right;
+            anchors.bottom: parent.bottom;
+            anchors.margins: defaultSpacing;
+            text: "►";
+            width: 45;
+            height: 45;
+            onClicked:
+            {
+                var selectedTime = uTime.getTime();
+                signalRunClicked(selectedTime.hour.toString() + ":" + selectedTime.minute.toString());
+            }
         }
 
 
@@ -218,14 +237,16 @@ Item {
         }
 /************************************* Настройки экспорта ************************************/
 
-        Label {
+        Label
+        {
             id: labelExportSettings;
             x: 35
             anchors.top: borderRect.bottom;
             text: "Настройки экспорта";
         }
 
-        ColumnLayout {
+        ColumnLayout
+        {
             anchors.top: labelExportSettings.verticalCenter;
             x: 10;
             Rectangle {
@@ -237,10 +258,13 @@ Item {
             }
         }
 
-        ColumnLayout {
+        ColumnLayout
+        {
            anchors.top: labelExportSettings.verticalCenter;
             x: 155;
-            Rectangle {
+
+            Rectangle
+            {
                 width: 655;
                 Layout.fillWidth: true;
                 Layout.preferredHeight: 1;
@@ -254,9 +278,11 @@ Item {
         Row
         {
             id: horizRow;
+            objectName: "row_RvtVersion";
             anchors.top: labelExportSettings.bottom;
             anchors.left: borderRect.left;
             anchors.topMargin: 5;
+
             Label
             {
                 id: labelRevitVersion;
@@ -264,7 +290,8 @@ Item {
                 text: "Версия Revit:";
             }
 
-            ComboBox {
+            ComboBox
+            {
                 id: cbVersion;
                 editable: false;
                 anchors.left: labelRevitVersion.right;
@@ -276,7 +303,6 @@ Item {
                     ListElement { text: "2022" }
                     ListElement { text: "2023" }
                 }
-                // onAccepted: {      model.append({text: editText})        }
             }
         }
 /************************************* Версия Revit ******************************************/
@@ -286,6 +312,7 @@ Item {
         Row
         {
             id: horizonRow;
+
             anchors.top: horizRow.bottom;
             anchors.topMargin: 25;
             x: 90;
@@ -297,6 +324,8 @@ Item {
         }
 
         UTimePicker{
+            id: uTime;
+            objectName: "uTime";
             anchors.top: horizRow.top;
             anchors.topMargin: 10;
             x: 65;
@@ -304,7 +333,7 @@ Item {
             size: Qt.size(0, 40);
             onChanged:
             {
-                var i =  getTime()
+                var i = getTime()
                 // console.log(i.hour)
                 // console.log(i.minute)
             }
@@ -313,10 +342,10 @@ Item {
 
 /******************************* Industry Foundation Classes **********************************/
 
-
         CheckBox
         {
             id: cbIFC;
+            objectName: "cbIFC";
             anchors.top: horizonRow.bottom;
             anchors.topMargin: 5;
             x: 35;

@@ -49,10 +49,10 @@ Item
 
     function setTimeString(time)
     {
-        textArea.text= time
+        textArea.text = time
     }
 
-    function setTime(hour,minute)
+    function setTime(hour, minute)
     {
         var _hour = hour;
         if(_hour < 10)

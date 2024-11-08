@@ -1,4 +1,4 @@
-TARGET = ExportToWindow
+TARGET = exportToWindow
 
 TEMPLATE = app
 
@@ -12,19 +12,19 @@ static {
 # Equivalent to "#define STATIC" in source code
     message("Static build.")
 }
-
+INCLUDEPATH += "C:\Program Files (x64)\Qt6\include\qt6"
 SOURCES += main.cpp \
     backend.cpp
 RESOURCES += \
-    ExportToWindow.qrc \
+    exportToWindow.qrc \
     shared\shared.qrc
 
-target.path = EXPORTWINDOW/ExportToWindow
+target.path = EXPORTWINDOW/exportToWindow
 INSTALLS += target
 
 RC_ICONS = resources/icon.ico
 ICON = resources/icon.ico
-win32: RC_FILE = resources/ExportToWindow.rc
+win32: RC_FILE = resources/exportToWindow.rc
 
 HEADERS += \
     backend.h
