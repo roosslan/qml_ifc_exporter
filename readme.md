@@ -1,5 +1,7 @@
 Not for QML designer.\
 \
+The file main.qml, folders "resources" and "shared" should be placed one level top, than the executable.
+\
 In case of Debugger (e.g. CDB) doesn't work,\
 turn on Menu Views > Debugger Global Log\
 probably your error is "debugging failed, Win32 error 0n87 "The parameter is incorrect."\

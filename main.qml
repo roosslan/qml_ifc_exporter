@@ -5,16 +5,18 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Window
 
-Item {
+Item
+{
+    property bool itemsEnabled: true;
     property real defaultSpacing: 10;
     property real topOffset: 10;
     signal qmlSignal(msg: string);
-    signal selectedFileSignal(fname: string);
+    signal signalStopClicked();
     signal signalRunClicked(utime: string);
     signal escKeyPressedSignal();
 
     id: mainWindow;
-    width: 1300;
+    width: 1300;    
     height: 870;
 
     focus: true;
@@ -32,6 +34,7 @@ Item {
         RoundButton
         {
             id: btnAddLocalProject;
+            enabled: itemsEnabled;
             anchors
             {
                 left: parent.left;
@@ -54,14 +57,15 @@ Item {
             TextField
             {
                 id: rsnEditBox;
-
                 width: btnAddLocalProject.width-50;
                 text: "RSN://ALD-SRV-B01/Projects/";
             }
         }
+
         Image
         {
             source: "resources/plus.png";
+            enabled: itemsEnabled;
             anchors.right: btnAddLocalProject.right;
             anchors.top: theTextBoxRow.top;
             width: 15;
@@ -71,7 +75,8 @@ Item {
                 anchors.fill: parent;
                 onClicked:
                 {
-                    listModel.append({"path": rsnEditBox.text });
+                    if ( rsnEditBox.text !== "")
+                        listModel.append({ "path": rsnEditBox.text });
                     rsnEditBox.text = "";
                 }
             }
@@ -126,6 +131,7 @@ Item {
         ListView
         {
             id: lvMain;
+            enabled: itemsEnabled;
             objectName: "o_lvMain";
             anchors.top: borderRect.top;
             anchors.margins: 10;
@@ -160,23 +166,25 @@ Item {
             ListModel
             {
                 id: listModel;
-
+/*
                 ListElement
                 {
-                    path: "C:\\Project\\Autodesk";
+                    path: "C:\\Projects\\Autodesk\\wall.rvt";
                 }
                 ListElement
                 {
-                    path: "C:\\Projects\\Revit";
+                    path: "\\\\ald-c666-666\\Projects\\Revit\\arm.rvt";
                 }
                 ListElement
                 {
-                    path: "RSN:";
+                    path: "RSN://Projects/101/floor.rvt";
                 }
+*/
             }
         }
 
-        ListView {
+        ListView
+        {
             id: lvLog;
             anchors.top: logFrame.top;
             anchors.margins: 10;
@@ -210,6 +218,8 @@ Item {
         RoundButton
         {
             id: btnSaveTrueToConfig;
+            objectName: btnRun;
+            enabled: itemsEnabled;
             anchors.right: parent.right;
             anchors.bottom: parent.bottom;
             anchors.margins: defaultSpacing;
@@ -220,23 +230,28 @@ Item {
             {
                 var selectedTime = uTime.getTime();
                 signalRunClicked(selectedTime.hour.toString() + ":" + selectedTime.minute.toString());
+                itemsEnabled = false;
+                btnStop.enabled = true;
             }
         }
-
 
         RoundButton
         {
             id: btnStop;
+            enabled: itemsEnabled;
             anchors.right: btnSaveTrueToConfig.left;
             anchors.bottom: parent.bottom;
             anchors.margins: defaultSpacing;
             text: "■";
             width: 45;
             height: 45;
-            onClicked: qmlSignal(mainWindow);
+            onClicked:
+            {
+                signalStopClicked();
+                itemsEnabled = true;
+            }
         }
 /************************************* Настройки экспорта ************************************/
-
         Label
         {
             id: labelExportSettings;
@@ -294,6 +309,7 @@ Item {
             {
                 id: cbVersion;
                 editable: false;
+                enabled: itemsEnabled;
                 anchors.left: labelRevitVersion.right;
                 anchors.leftMargin: 10;
                 anchors.top: labelExportSettings.bottom;
@@ -325,6 +341,7 @@ Item {
 
         UTimePicker{
             id: uTime;
+            enabled: itemsEnabled;
             objectName: "uTime";
             anchors.top: horizRow.top;
             anchors.topMargin: 10;
@@ -345,6 +362,7 @@ Item {
         CheckBox
         {
             id: cbIFC;
+            enabled: itemsEnabled;
             objectName: "cbIFC";
             anchors.top: horizonRow.bottom;
             anchors.topMargin: 5;
@@ -391,13 +409,15 @@ Item {
             Label
             {
                 id: labelIFCPath;
-                text: "C:\\MyDocs";
+                objectName: "text_IFCPath";
+                text: "C:\\Documents and Settings";
             }
         }
 
         ColumnLayout
         {
             id: btnBrowseFolderCol;
+            enabled: itemsEnabled;
             anchors.top: cbIFC.bottom;
             anchors.right: borderRect.right;
             RoundButton
@@ -406,7 +426,10 @@ Item {
                 text: "...";
                 width: 15;
                 height: 15;
-                onClicked: qmlSignal(mainWindow);
+                onClicked:
+                {
+                    selectDirectoryDialog.open();
+                }
             }
         }
 /******************************* Industry Foundation Classes **********************************/
@@ -416,6 +439,7 @@ Item {
         Row
         {
             id: hRow;
+            objectName: "row_IFCVersion";
             anchors.top: btnBrowseFolderCol.bottom;
             anchors.left: borderRect.left;
             anchors.topMargin: 5;
@@ -430,6 +454,7 @@ Item {
             ComboBox
             {
                 id: cbIFCVersion;
+                enabled: itemsEnabled;
                 editable: false;
                 anchors.left: labelIFCVersion.right;
                 anchors.leftMargin: 10;
@@ -437,20 +462,18 @@ Item {
                 model: ListModel
                 {
                     id: revitIFCVersion;
-                    ListElement { text: "Default" }
-                    ListElement { text: "IFCBCA" }
-                    ListElement { text: "IFC2x2" }
-                    ListElement { text: "IFC2x3" }
-                    ListElement { text: "IFCCOBIE" }
+                    ListElement { text: "Default"   }
+                    ListElement { text: "IFCBCA"    }
+                    ListElement { text: "IFC2x2"    }
+                    ListElement { text: "IFC2x3"    }
+                    ListElement { text: "IFCCOBIE"  }
                     ListElement { text: "IFC2x3CV2" }
-                    ListElement { text: "IFC2x3FM" }
+                    ListElement { text: "IFC2x3FM"  }
                     ListElement { text: "IFC2x3BFM" }
-                    ListElement { text: "IFC4" }
-                    ListElement { text: "IFC4DTV" }
-                    ListElement { text: "IFC4RV" }
-
+                    ListElement { text: "IFC4"      }
+                    ListElement { text: "IFC4DTV"   }
+                    ListElement { text: "IFC4RV"    }
                 }
-                // onAccepted: {      model.append({text: editText})        }
             }
         }
 
@@ -459,90 +482,86 @@ Item {
 
 /******************************* Navisworks **********************************/
 
-                CheckBox
-                {
-                    id: cbNavi;
-                    anchors.top: hRow.bottom;
-                    anchors.topMargin: 20;
-                    x: 35
-                    checked: true;
-                    text: "Navisworks";
-                }
+        CheckBox
+        {
+            id: cbNavi;
+            objectName: "cbNavi";
+            enabled: itemsEnabled;
+            anchors.top: hRow.bottom;
+            anchors.topMargin: 20;
+            x: 35
+            checked: true;
+            text: "Navisworks";
+        }
 
-                ColumnLayout
-                {
-                    anchors.top: cbNavi.verticalCenter;
-                    x: 10;
-                    Rectangle
-                    {
-                        id: lineNavi;
-                        width: 20;
-                        Layout.fillWidth: true;
-                        Layout.preferredHeight: 1;
-                        color: "black";
-                    }
-                }
+        ColumnLayout
+        {
+            anchors.top: cbNavi.verticalCenter;
+            x: 10;
+            Rectangle
+            {
+                id: lineNavi;
+                width: 20;
+                Layout.fillWidth: true;
+                Layout.preferredHeight: 1;
+                color: "black";
+            }
+        }
 
-                ColumnLayout
-                {
-                    id: line_cb_Navi_col;
-                    anchors.top: cbNavi.verticalCenter;
-                    x: 130;
-                    Rectangle
-                    {
-                        id: line_cb_Navi;
-                        width: 680;
-                        Layout.fillWidth: true;
-                        Layout.preferredHeight: 1;
-                        color: "black";
-                    }
-                }
+        ColumnLayout
+        {
+            id: line_cb_Navi_col;
+            anchors.top: cbNavi.verticalCenter;
+            x: 130;
+            Rectangle
+            {
+                id: line_cb_Navi;
+                width: 680;
+                Layout.fillWidth: true;
+                Layout.preferredHeight: 1;
+                color: "black";
+            }
+        }
 
-                ColumnLayout
-                {
-                    id: horizNavi_Col_text;
-                    x: 30
-                    anchors.topMargin: 10;
-                    anchors.top: cbNavi.bottom;
-                    Label
-                    {
-                        id: labelNaviPath;
-                        text: "C:\\MyDocs";
-                    }
-                }
-
-                ColumnLayout
-                {
-                    id: btnBrowseFolderNaviCol;
-                    anchors.top: cbNavi.bottom;
-                    anchors.right: borderRect.right;
-                    RoundButton
-                    {
-                        id: btnBrowseFolderNavi;
-                        text: "...";
-                        width: 15
-                        height: 15
-                        onClicked: qmlSignal(mainWindow)
-                    }
-                }
 /******************************* Navisworks **********************************/
 
-        FileDialog{
-                id: fileDialog;
-                title: "Please choose a file";
-                nameFilters: ["Revit Files (*.rvt *.ifc)"];
-                onAccepted: {
-                    selectedFileSignal(fileDialog.selectedFile.toString());
-
-                    listModel.append({"path": fileDialog.selectedFile.toString() })
-                    fileDialog.selectedFile = "";
-                    fileDialog.close()
-                }
+        FileDialog
+        {
+            id: fileDialog;
+            title: "Please choose a file";
+            /* nameFilters: ["Revit Files (*.rvt *.ifc)"]; */
+            nameFilters: ["Revit Files (*.rvt)"];
+            onAccepted:
+            {
+                var path = fileDialog.selectedFile.toString();
+                // remove prefixed "file:///"
+                path = path.replace(/^(file:\/{3})/,"");
+                // unescape html codes like '%23' for '#'
+                listModel.append({"path": decodeURIComponent(path) });
+                fileDialog.selectedFile = "";
+                fileDialog.close();
             }
+        }
+
+        FolderDialog
+        {
+            id: selectDirectoryDialog;
+            title: "Выберите папку для экспорта";
+            onAccepted:
+            {
+                var path = selectDirectoryDialog.selectedFolder.toString();
+                // remove prefixed "file:///"
+                path = path.replace(/^(file:\/{3})/,"");
+                // unescape html codes like '%23' for '#'
+                labelIFCPath.text = decodeURIComponent(path);
+                selectDirectoryDialog.selectedFolder = "";
+                selectDirectoryDialog.close();
+            }
+        }
     }
 
-
-    property var splashWindow: Window {
+    property var splashWindow: Window
+    {
         id: splash;
         color: "transparent";
         title: "Splash Window";
@@ -558,22 +577,26 @@ Item {
         width: splashImage.width;
         height: splashImage.height;
 
-        Image {
+        Image
+        {
             id: splashImage
             source: Images.qtLogo
-            TapHandler {
+            TapHandler
+            {
                 onTapped: splash.exit()
             }
         }
 
-        function exit() {            
+        function exit()
+        {
             mainWindow.visible = true
             splash.visible = false
             splash.timeout()
         }
 
         //! [timer]
-        Timer {
+        Timer
+        {
             interval: splash.timeoutInterval; running: splash.visible; repeat: false
             onTriggered: splash.exit()
         }
