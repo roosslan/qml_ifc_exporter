@@ -10,11 +10,13 @@ BackEnd::BackEnd(QGuiApplication *parent, QObject* item)
 {
     m_Window = parent;
     m_item = item;
+    m_server = new QTcpServer();
 }
 
 void BackEnd::slotStopClicked()
 {
-
+    SaveToInf("ControlFlags", "runNow", "false");
+    qDebug() << "The control flag 'runNow' was set to false";
 }
 
 void BackEnd::DeleteSection(QString sectionName)
@@ -78,6 +80,8 @@ void BackEnd::slotRunClicked(const QString &utime)
     {
         qDebug() << "Getting *.RVT files list is failed!";
     }
+    SaveToInf("ControlFlags", "runNow", "true");
+    qDebug() << "The control flag 'runNow' was set to true";
 }
 
 void BackEnd::escSlot()
@@ -91,12 +95,12 @@ void bgMessageHandler(QtMsgType type, const QMessageLogContext &, const QString 
     switch (type)
     {
     case QtDebugMsg:
-        txt = QString("Debug: %1").arg(msg);
+        txt = QString("export: %1").arg(msg);
         break;
 
-        /*  case QtWarningMsg:
-            txt = QString("Warning: %1").arg(msg);
-            break;
+    /*  case QtWarningMsg:
+        txt = QString("Warning: %1").arg(msg);
+        break;
     */
     case QtCriticalMsg:
         txt = QString("Critical: %1").arg(msg);
@@ -105,7 +109,7 @@ void bgMessageHandler(QtMsgType type, const QMessageLogContext &, const QString 
         txt = QString("Fatal: %1").arg(msg);
         abort();
     }
-    const QString fileName{"alabuga.dev.log"};
+    const QString fileName{"alabuga.q.log"};
     QString appData = getenv("appdata");
 
     if (appData.isEmpty()) {
@@ -114,7 +118,7 @@ void bgMessageHandler(QtMsgType type, const QMessageLogContext &, const QString 
     QString logFileLocation = "\\alabuga_dev\\" + fileName;
     QFile outFile(appData + logFileLocation);
 
-    if (txt != "" && !txt.startsWith("Debug: QML Debugger: Waiting for connection on port") )
+    if (txt != "" && !msg.startsWith("QML Debugger: Waiting for connection on port") )
     {
         outFile.open(QIODevice::WriteOnly | QIODevice::Append);
         QTextStream ts(&outFile);

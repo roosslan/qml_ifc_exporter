@@ -6,15 +6,19 @@
 #include <QObject>
 #include <QString>
 #include <QGuiApplication>
+#include <QTcpSocket>
+#include <QTcpServer>
 
 class BackEnd : public QObject
 {
     Q_OBJECT
     QML_ELEMENT
     QGuiApplication* m_Window;
+    QTcpSocket tcpSocket;
     QObject *m_item;
+    QTcpServer* m_server;
     QString appData = getenv("appdata");
-    QString iniFile = appData + "\\alabuga_dev\\export.inf";
+    QString iniFile = appData + "\\alabuga_dev\\bimalde.inf";
     LPCWSTR iniFName = (const wchar_t*) iniFile.utf16();
 public:
     BackEnd(QGuiApplication *parent, QObject* item);
