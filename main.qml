@@ -313,6 +313,7 @@ Item
                 anchors.left: labelRevitVersion.right;
                 anchors.leftMargin: 10;
                 anchors.top: labelExportSettings.bottom;
+                currentIndex: 1;
                 model: ListModel
                 {
                     id: revitVersion;

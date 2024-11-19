@@ -32,10 +32,18 @@ int main (int argc, char* argv[])
     QGuiApplication qGUIApp(argc, argv);
 
     QQuickView view;
+
+
     view.setSource(QUrl::fromLocalFile("../main.qml"));
     QObject *item = view.rootObject();
 
     BackEnd backEndRula(&qGUIApp, item);
+
+    backEndRula.DeleteInfSection("SourceDisksFiles");
+
+    QString exportDirectory = backEndRula.ReadInfString("DestinationDirs", "DefaultDestDir");
+    QQuickItem* QQuickText_IFCPath = item->findChild<QQuickItem*>("text_IFCPath");
+    QQuickText_IFCPath->setProperty("text", exportDirectory);
 
     QObject::connect(item, SIGNAL(escKeyPressedSignal()), &backEndRula, SLOT(escSlot()));
     QObject::connect(item, SIGNAL(signalStopClicked()), &backEndRula, SLOT(slotStopClicked()));

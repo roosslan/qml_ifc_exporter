@@ -17,17 +17,19 @@ class BackEnd : public QObject
     QTcpSocket tcpSocket;
     QObject *m_item;
     QTcpServer* m_server;
-    QString appData = getenv("appdata");
-    QString iniFile = appData + "\\alabuga_dev\\bimalde.inf";
-    LPCWSTR iniFName = (const wchar_t*) iniFile.utf16();
-public:
+    QString appData = getenv("appdata");    
+public:    
     BackEnd(QGuiApplication *parent, QObject* item);
+    QString iniFile = appData + "\\alabuga_dev\\bimalde.inf";
+    LPCWSTR infName = (const wchar_t*) iniFile.utf16();
 public slots:
     void escSlot();
     void slotStopClicked();
     void slotRunClicked(const QString &utime);
-    void SaveToInf(QString sectionName, QString keyName, QString value);
-    void DeleteSection(QString sectionName);
+
+    QString ReadInfString(QString sectionName, QString keyName);
+    void WriteInfString(QString sectionName, QString keyName, QString value);
+    void DeleteInfSection(QString sectionName);
 };
 
 void bgMessageHandler(QtMsgType type, const QMessageLogContext &, const QString & msg);

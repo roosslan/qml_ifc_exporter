@@ -15,54 +15,66 @@ BackEnd::BackEnd(QGuiApplication *parent, QObject* item)
 
 void BackEnd::slotStopClicked()
 {
-    SaveToInf("ControlFlags", "runNow", "false");
+    WriteInfString("ControlFlags", "runNow", "false");
     qDebug() << "The control flag 'runNow' was set to false";
 }
 
-void BackEnd::DeleteSection(QString sectionName)
+void BackEnd::DeleteInfSection(QString sectionName)
 {
     LPCWSTR wsSection = (const wchar_t*) sectionName.utf16();
-    WritePrivateProfileStringW(wsSection, NULL, NULL, iniFName);
+    WritePrivateProfileStringW(wsSection, NULL, NULL, infName);
     wsSection = nullptr;
 }
 
-void BackEnd::SaveToInf(QString sectionName, QString keyName, QString value)
+void BackEnd::WriteInfString(QString sectionName, QString keyName, QString value)
 {
     LPCWSTR wsSection = (const wchar_t*) sectionName.utf16();
     LPCWSTR wsKey = (const wchar_t*) keyName.utf16();
     LPCWSTR wsValue = (const wchar_t*) value.utf16();
-    WritePrivateProfileStringW(wsSection, wsKey, wsValue, iniFName);
+    WritePrivateProfileStringW(wsSection, wsKey, wsValue, infName);
     wsSection = wsKey = wsValue = nullptr;
+}
+
+QString BackEnd::ReadInfString(QString sectionName, QString keyName)
+{
+    wchar_t wc_Val[_MAX_FNAME] = L"";
+
+    LPCWSTR wsSection = (const wchar_t*) sectionName.utf16();
+    LPCWSTR wsKey = (const wchar_t*) keyName.utf16();
+    GetPrivateProfileStringW(wsSection, wsKey, nullptr, wc_Val, std::size(wc_Val), infName);
+    QString s_Ret = QString::fromWCharArray(wc_Val);
+    wsSection = wsKey = nullptr;
+    return s_Ret;
 }
 
 void BackEnd::slotRunClicked(const QString &utime)
 {
-    DeleteSection("SourceDisksFiles");
-    SaveToInf("ControlFlags", "Time", utime);
+    DeleteInfSection("SourceDisksFiles");
+    WriteInfString("ControlFlags", "Time", utime);
 
     QQuickItem* qcbRvtVers = m_item->findChild<QQuickItem*>("row_RvtVersion");
     QObject* cb_RvtVers = qcbRvtVers->children()[1];
     QString revitVersion = cb_RvtVers->property("currentText").toString();
-    SaveToInf("ControlFlags", "RevitVersion", revitVersion);
+    WriteInfString("ControlFlags", "RevitVersion", revitVersion);
 
     QQuickItem* qcheckboxIFC = m_item->findChild<QQuickItem*>("cbIFC");
     bool IsCheckboxIFC_checked = qcheckboxIFC->property("checked").toBool();
     QString sIFC_checked = QVariant(IsCheckboxIFC_checked).toString();
-    SaveToInf("RVT", "IFC", sIFC_checked);
+    WriteInfString("RVT", "IFC", sIFC_checked);
 
     QQuickItem* checkboxNavi = m_item->findChild<QQuickItem*>("cbNavi");
     bool IsCheckboxNavi_checked = checkboxNavi->property("checked").toBool();
     QString sNavi_checked = QVariant(IsCheckboxNavi_checked).toString();
-    SaveToInf("RVT", "NWC", sNavi_checked);
+    WriteInfString("RVT", "NWC", sNavi_checked);
 
     QQuickItem* QQuickText_IFCPath = m_item->findChild<QQuickItem*>("text_IFCPath");
     QString sIFCPath = QQuickText_IFCPath->property("text").toString();
-    SaveToInf("DestinationDirs", "DefaultDestDir", sIFCPath);
+    WriteInfString("DestinationDirs", "DefaultDestDir", sIFCPath);
 
     QQuickItem* qtextIFCVers = m_item->findChild<QQuickItem*>("row_IFCVersion");
     QObject* cbIFCvers = qtextIFCVers->children()[1];
     QString ifcVersion = cbIFCvers->property("currentText").toString();
-    SaveToInf("ControlFlags", "IFCVersion", ifcVersion);
+    WriteInfString("ControlFlags", "IFCVersion", ifcVersion);
 
     QQuickItem* lvMain = m_item->findChild<QQuickItem*>("o_lvMain");
     QObject* listModel = lvMain->children()[1];
@@ -73,14 +85,14 @@ void BackEnd::slotRunClicked(const QString &utime)
         for (int i = 0; i < qmlListModel->rowCount(); ++i)
         {
             QString rvtFileName = qmlListModel->data(qmlListModel->index(i, 0), 0).toString();
-            SaveToInf("SourceDisksFiles", rvtFileName, "1");
+            WriteInfString("SourceDisksFiles", rvtFileName, "1");
         }
     }
     else
     {
         qDebug() << "Getting *.RVT files list is failed!";
     }
-    SaveToInf("ControlFlags", "runNow", "true");
+    WriteInfString("ControlFlags", "runNow", "true");
     qDebug() << "The control flag 'runNow' was set to true";
 }
 
