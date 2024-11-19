@@ -15,8 +15,8 @@ BEGIN
     BEGIN
         BLOCK "000004b0"
         BEGIN
-            VALUE "CompanyName", "Alabuga.dev Company Ltd"
-            VALUE "FileDescription", "Alabuga.dev WindowExportTo"
+            VALUE "CompanyName", "Alabuga.dev"
+            VALUE "FileDescription", "Alabuga.dev ExportTo"
             VALUE "FileVersion", "1.17.10.20"
             VALUE "LegalCopyright", "Copyright (C) 2021 - 2024 Alabuga.dev"
             VALUE "InternalName", "exportToWindow"

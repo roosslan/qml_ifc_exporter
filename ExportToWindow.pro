@@ -12,7 +12,8 @@ static {
 # Equivalent to "#define STATIC" in source code
     message("Static build.")
 }
-INCLUDEPATH += "C:\Program Files (x64)\Qt6\include\qt6"
+#INCLUDEPATH += "C:\Program Files (x64)\Qt6\include\qt6"
+INCLUDEPATH += "C:\Program Files (x64)\Qt6.8\include\qt6"
 SOURCES += main.cpp \
     backend.cpp
 RESOURCES += \
