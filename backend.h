@@ -20,13 +20,14 @@ class BackEnd : public QObject
     QString appData = getenv("appdata");    
 public:    
     BackEnd(QGuiApplication *parent, QObject* item);
-    QString iniFile = appData + "\\alabuga_dev\\bimalde.inf";
-    LPCWSTR infName = (const wchar_t*) iniFile.utf16();
+    QString infFile = appData + "\\alabuga_dev\\bimalde.inf";
+    LPCWSTR infName = (const wchar_t*) infFile.utf16();
 public slots:
     void escSlot();
     void slotStopClicked();
     void slotRunClicked(const QString &utime);
-
+    void AddInfString(QString keyAsValue);
+    void AppendInfSection(QString sectionName);
     QString ReadInfString(QString sectionName, QString keyName);
     void WriteInfString(QString sectionName, QString keyName, QString value);
     void DeleteInfSection(QString sectionName);

@@ -1,9 +1,9 @@
 <RCC>
     <qresource prefix="/qt/qml/shared">
         <file>Button.qml</file>
-        <file>CheckBox.qml</file>
+        <file>CheckBoxALDE.qml</file>
         <file>Images.qml</file>
-        <file>Label.qml</file>
+        <file>LabelALDE.qml</file>
         <file>LauncherList.qml</file>
         <file>SimpleLauncherDelegate.qml</file>
         <file>Slider.qml</file>

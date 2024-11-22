@@ -5,5 +5,5 @@ import QtQuick
 
 Text {
     SystemPalette { id: palette }
-    color: palette.text
+    color: "black"; /* palette.text  */
 }

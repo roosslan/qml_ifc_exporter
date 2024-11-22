@@ -2,7 +2,7 @@ TARGET = exportToWindow
 
 TEMPLATE = app
 
-QT += quick qml widgets core gui
+QT += quick qml widgets core gui quickcontrols2
 CONFIG += static
 static {
 # Everything below takes effect with CONFIG += static

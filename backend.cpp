@@ -1,4 +1,5 @@
 #include "backend.h"
+#include <QCheckbox>
 #include <windows.h>
 #include "qquickitem.h"
 #include <QQuickView>
@@ -26,6 +27,31 @@ void BackEnd::DeleteInfSection(QString sectionName)
     wsSection = nullptr;
 }
 
+void BackEnd::AppendInfSection(QString sectionName)
+{
+    QFile f(infFile);
+    if (f.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append))
+    {
+        QTextStream outInf(&f);
+        outInf << "[" << sectionName << "]" << "\n";
+    }
+    f.flush();
+    f.close();
+
+}
+
+void BackEnd::AddInfString(QString keyAsValue)
+{
+    QFile f(infFile);
+    if (f.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append))
+    {
+        QTextStream outInf(&f);        
+        outInf << keyAsValue << "\n";
+    }
+    f.flush();
+    f.close();
+}
+
 void BackEnd::WriteInfString(QString sectionName, QString keyName, QString value)
 {
     LPCWSTR wsSection = (const wchar_t*) sectionName.utf16();
@@ -50,6 +76,8 @@ QString BackEnd::ReadInfString(QString sectionName, QString keyName)
 void BackEnd::slotRunClicked(const QString &utime)
 {
     DeleteInfSection("SourceDisksFiles");
+    AppendInfSection("SourceDisksFiles");
+
     WriteInfString("ControlFlags", "Time", utime);
 
     QQuickItem* qcbRvtVers = m_item->findChild<QQuickItem*>("row_RvtVersion");
@@ -85,7 +113,7 @@ void BackEnd::slotRunClicked(const QString &utime)
         for (int i = 0; i < qmlListModel->rowCount(); ++i)
         {
             QString rvtFileName = qmlListModel->data(qmlListModel->index(i, 0), 0).toString();
-            WriteInfString("SourceDisksFiles", rvtFileName, "1");
+            AddInfString(rvtFileName);
         }
     }
     else

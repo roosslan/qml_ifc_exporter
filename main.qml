@@ -116,7 +116,7 @@ Item
             borderColor: "black";
         }
 
-        Label
+        LabelALDE
         {
             id: labelLog;
             x: 1000;
@@ -252,7 +252,7 @@ Item
             }
         }
 /************************************* Настройки экспорта ************************************/
-        Label
+        LabelALDE
         {
             id: labelExportSettings;
             x: 35
@@ -298,7 +298,7 @@ Item
             anchors.left: borderRect.left;
             anchors.topMargin: 5;
 
-            Label
+            LabelALDE
             {
                 id: labelRevitVersion;
                 anchors.top: labelExportSettings.bottom;
@@ -333,7 +333,7 @@ Item
             anchors.top: horizRow.bottom;
             anchors.topMargin: 25;
             x: 90;
-            Label
+            LabelALDE
             {
                 id: labelTime;
                 text: "Время выгрузки";
@@ -359,8 +359,7 @@ Item
 /************************************* Время выгрузки ****************************************/
 
 /******************************* Industry Foundation Classes **********************************/
-
-        CheckBox
+        CheckBoxALDE
         {
             id: cbIFC;
             enabled: itemsEnabled;
@@ -407,7 +406,7 @@ Item
             x: 30;
             anchors.topMargin: 10;
             anchors.top: cbIFC.bottom;
-            Label
+            LabelALDE
             {
                 id: labelIFCPath;
                 objectName: "text_IFCPath";
@@ -445,7 +444,7 @@ Item
             anchors.left: borderRect.left;
             anchors.topMargin: 5;
 
-            Label
+            LabelALDE
             {
                 id: labelIFCVersion;
                 anchors.top: horizIFC_Col_text.bottom;
@@ -483,7 +482,7 @@ Item
 
 /******************************* Navisworks **********************************/
 
-        CheckBox
+        CheckBoxALDE
         {
             id: cbNavi;
             objectName: "cbNavi";
