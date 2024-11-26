@@ -8,6 +8,9 @@
 #include <QGuiApplication>
 #include <QTcpSocket>
 #include <QTcpServer>
+#include <QMetaType>
+#include <QSet>
+#include <QStandardPaths>
 
 class BackEnd : public QObject
 {
@@ -17,7 +20,19 @@ class BackEnd : public QObject
     QTcpSocket tcpSocket;
     QObject *m_item;
     QTcpServer* m_server;
-    QString appData = getenv("appdata");    
+    QString appData = getenv("appdata");
+    QSet<QTcpSocket*> connection_set;
+signals:
+    void newMessage(QString);
+private slots:
+    void newConnection();
+    void appendToSocketList(QTcpSocket* socket);
+
+    void readSocket();
+    void discardSocket();
+    void displayError(QAbstractSocket::SocketError socketError);
+
+    void displayMessage(const QString& str);
 public:    
     BackEnd(QGuiApplication *parent, QObject* item);
     QString infFile = appData + "\\alabuga_dev\\bimalde.inf";
@@ -26,6 +41,7 @@ public slots:
     void escSlot();
     void slotStopClicked();
     void slotRunClicked(const QString &utime);
+    void slotIsFileExists(QString fname);
     void AddInfString(QString keyAsValue);
     void AppendInfSection(QString sectionName);
     QString ReadInfString(QString sectionName, QString keyName);

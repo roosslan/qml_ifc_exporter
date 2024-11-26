@@ -1,17 +1,104 @@
 #include "backend.h"
 #include <QCheckbox>
+#include <QNetworkInterface>
 #include <windows.h>
 #include "qquickitem.h"
 #include <QQuickView>
 #include <qguiapplication.h>
 #include <QFileDialog>
 #include <QtCore/qabstractitemmodel.h>
+#include <QThread>
+
 
 BackEnd::BackEnd(QGuiApplication *parent, QObject* item)
 {
     m_Window = parent;
     m_item = item;
-    m_server = new QTcpServer();
+
+    QThread* cThread = new QThread();
+
+    m_server = new QTcpServer(this);
+
+    m_server->moveToThread(cThread);
+
+    if (!m_server->listen(QHostAddress::Any, 6667))
+    {
+        qDebug() << "Unable to start QTcp server: " << m_server->errorString();
+        m_server->close();
+    }
+    else
+    {
+        connect(this, &BackEnd::newMessage, this, &BackEnd::displayMessage);
+        connect(m_server, &QTcpServer::newConnection, this, &BackEnd::newConnection);
+    }
+}
+
+void BackEnd::newConnection()
+{
+    while (m_server->hasPendingConnections())
+        appendToSocketList(m_server->nextPendingConnection());
+}
+
+void BackEnd::appendToSocketList(QTcpSocket* socket)
+{
+    connection_set.insert(socket);
+    connect(socket, &QTcpSocket::readyRead, this, &BackEnd::readSocket);
+    connect(socket, &QTcpSocket::disconnected, this, &BackEnd::discardSocket);
+    connect(socket, &QAbstractSocket::errorOccurred, this, &BackEnd::displayError);
+    // ui->comboBox_receiver->addItem(QString::number(socket->socketDescriptor()));
+//    displayMessage(QString("INFO :: Client with sockd: %1 has just entered").arg(socket->socketDescriptor()));
+}
+
+void BackEnd::discardSocket()
+{
+    QTcpSocket* socket = reinterpret_cast<QTcpSocket*>(sender());
+    QSet<QTcpSocket*>::iterator it = connection_set.find(socket);
+    if (it != connection_set.end()){
+//        displayMessage(QString("INFO :: A client : %1 has just left").arg(socket->socketDescriptor()));
+        connection_set.remove(*it);
+    }
+
+    socket->deleteLater();
+}
+
+void BackEnd::readSocket()
+{
+    QTcpSocket* socket = reinterpret_cast<QTcpSocket*>(sender());
+
+    QByteArray message = socket->readAll(); // Read message
+    qDebug() << "bgHelper: " << QString(message);
+    displayMessage("bgHelper: " + QString(message));
+}
+
+void BackEnd::displayError(QAbstractSocket::SocketError socketError)
+{
+    switch (socketError) {
+    case QAbstractSocket::RemoteHostClosedError:
+        break;
+    case QAbstractSocket::HostNotFoundError:
+        qDebug() << "The host was not found. Please check the host name and port settings.";
+        break;
+    case QAbstractSocket::ConnectionRefusedError:
+        qDebug() << "The connection was refused by the peer. Make sure QTCPServer is running, and check that the host name and port settings are correct.";
+        break;
+    default:
+        QTcpSocket* socket = qobject_cast<QTcpSocket*>(sender());
+        qDebug() << "The following error occurred: %1." << socket->errorString();
+        break;
+    }
+}
+
+void BackEnd::displayMessage(const QString& str)
+{
+    //ui->textBrowser_receivedMessages->append(str);
+    QQuickItem* lvLog = m_item->findChild<QQuickItem*>("o_lvLog");
+    QObject* lmLog = lvLog->children()[1];
+    QAbstractListModel* qLmLog = qobject_cast<QAbstractListModel*>(lmLog);
+    QVariant returnedValue;
+    QVariant lmMsg = str;
+    QMetaObject::invokeMethod(lmLog, "addRow",
+                              Q_RETURN_ARG(QVariant, returnedValue),
+                              Q_ARG(QVariant, lmMsg));
 }
 
 void BackEnd::slotStopClicked()
@@ -37,7 +124,6 @@ void BackEnd::AppendInfSection(QString sectionName)
     }
     f.flush();
     f.close();
-
 }
 
 void BackEnd::AddInfString(QString keyAsValue)
@@ -73,6 +159,28 @@ QString BackEnd::ReadInfString(QString sectionName, QString keyName)
     return s_Ret;
 }
 
+void BackEnd::slotIsFileExists(QString fname)
+{
+    QQuickItem* lvMain = m_item->findChild<QQuickItem*>("o_lvMain");
+    QObject* listModel = lvMain->children()[1];
+
+    if (fname.startsWith("RSN://"))
+    {
+        fname.replace("RSN://", "\\\\");
+        int spos = fname.indexOf("/");
+        QString serverName = fname.mid(2, spos-2);
+        fname.replace("\\\\" + serverName + "/", "\\\\" + serverName + "\\Revit23\\");        
+    }
+    else if (QFile::exists(fname)){ };
+
+    QVariant returnedValue;
+    QVariant boolMsg = true;
+    QMetaObject::invokeMethod(listModel, "removeLastRow",
+                              Q_RETURN_ARG(QVariant, returnedValue),
+                              Q_ARG(QVariant, boolMsg));
+}
+
+
 void BackEnd::slotRunClicked(const QString &utime)
 {
     DeleteInfSection("SourceDisksFiles");
@@ -106,7 +214,7 @@ void BackEnd::slotRunClicked(const QString &utime)
 
     QQuickItem* lvMain = m_item->findChild<QQuickItem*>("o_lvMain");
     QObject* listModel = lvMain->children()[1];
-    QAbstractListModel* qmlListModel = qobject_cast<QAbstractListModel*>(listModel);    
+    QAbstractListModel* qmlListModel = qobject_cast<QAbstractListModel*>(listModel);
 
     if (qmlListModel != nullptr)
     {

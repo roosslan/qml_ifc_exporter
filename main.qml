@@ -8,16 +8,19 @@ import QtQuick.Window
 Item
 {
     property bool itemsEnabled: true;
+    property bool fileExists: false;
     property real defaultSpacing: 10;
     property real topOffset: 10;
+
     signal qmlSignal(msg: string);
     signal signalStopClicked();
     signal signalRunClicked(utime: string);
     signal escKeyPressedSignal();
+    signal signalIsFileExists(fname: string);
 
     id: mainWindow;
     width: 1300;    
-    height: 870;
+    height: 870;    
 
     focus: true;
     Keys.onEscapePressed: escKeyPressedSignal();
@@ -75,9 +78,13 @@ Item
                 anchors.fill: parent;
                 onClicked:
                 {
-                    if ( rsnEditBox.text !== "")
-                        listModel.append({ "path": rsnEditBox.text });
-                    rsnEditBox.text = "";
+                   signalIsFileExists(rsnEditBox.text);
+                   if (fileExists)
+                   {
+                        if ( rsnEditBox.text !== "")
+                            listModel.append({ "path": rsnEditBox.text });
+                        rsnEditBox.text = "";
+                   }
                 }
             }
         }
@@ -162,8 +169,7 @@ Item
                     }
                 }
             }
-            model:
-            ListModel
+            model: ListModel
             {
                 id: listModel;
 /*
@@ -180,6 +186,10 @@ Item
                     path: "RSN://Projects/101/floor.rvt";
                 }
 */
+                function removeLastRow(remove)
+                {
+                    fileExists = remove;                    
+                }
             }
         }
 
@@ -191,7 +201,7 @@ Item
             anchors.left: logFrame.left;
             height: 750;
             width: 600;
-
+            objectName: "o_lvLog";
             delegate:
                 Text
                 {
@@ -203,14 +213,15 @@ Item
 
                 model: ListModel
                 {
-                    id: lmModel;
+                    id: lmLogModel;
                     ListElement
                     {
                         msg: "Подготовка к выгрузке";
                     }
-                    ListElement
+
+                    function addRow(caption)
                     {
-                        msg: "Ожидаем...";
+                        lmLogModel.append({"msg": caption });
                     }
                 }
         }
@@ -219,16 +230,18 @@ Item
         {
             id: btnSaveTrueToConfig;
             objectName: btnRun;
-            enabled: itemsEnabled;
+            enabled: mainWindow.itemsEnabled;
             anchors.right: parent.right;
             anchors.bottom: parent.bottom;
-            anchors.margins: defaultSpacing;
+            anchors.margins: mainWindow.defaultSpacing;
             text: "►";
             width: 45;
             height: 45;
             onClicked:
             {
                 var selectedTime = uTime.getTime();
+
+                lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Назначенное время " +  selectedTime.hour.toString() + ":" + selectedTime.minute.toString()});
                 signalRunClicked(selectedTime.hour.toString() + ":" + selectedTime.minute.toString());
                 itemsEnabled = false;
                 btnStop.enabled = true;
@@ -238,16 +251,17 @@ Item
         RoundButton
         {
             id: btnStop;
-            enabled: itemsEnabled;
+            enabled: mainWindow.itemsEnabled;
             anchors.right: btnSaveTrueToConfig.left;
             anchors.bottom: parent.bottom;
-            anchors.margins: defaultSpacing;
+            anchors.margins: mainWindow.defaultSpacing;
             text: "■";
             width: 45;
             height: 45;
             onClicked:
             {
                 signalStopClicked();
+                lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Процесс закрыт"});
                 itemsEnabled = true;
             }
         }
@@ -342,7 +356,7 @@ Item
 
         UTimePicker{
             id: uTime;
-            enabled: itemsEnabled;
+            enabled: mainWindow.itemsEnabled;
             objectName: "uTime";
             anchors.top: horizRow.top;
             anchors.topMargin: 10;
@@ -362,7 +376,7 @@ Item
         CheckBoxALDE
         {
             id: cbIFC;
-            enabled: itemsEnabled;
+            enabled: mainWindow.itemsEnabled;
             objectName: "cbIFC";
             anchors.top: horizonRow.bottom;
             anchors.topMargin: 5;
@@ -558,7 +572,8 @@ Item
                 selectDirectoryDialog.close();
             }
         }
-    }
+
+    }    
 
     property var splashWindow: Window
     {
