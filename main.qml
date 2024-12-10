@@ -473,6 +473,7 @@ Item
                 anchors.left: labelIFCVersion.right;
                 anchors.leftMargin: 10;
                 anchors.top: labelIFCVersion.top;
+                currentIndex: 10;
                 model: ListModel
                 {
                     id: revitIFCVersion;

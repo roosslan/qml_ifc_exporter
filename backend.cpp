@@ -64,10 +64,18 @@ void BackEnd::discardSocket()
 void BackEnd::readSocket()
 {
     QTcpSocket* socket = reinterpret_cast<QTcpSocket*>(sender());
-
     QByteArray message = socket->readAll(); // Read message
-    qDebug() << "bgHelper: " << QString(message);
-    displayMessage("bgHelper: " + QString(message));
+    qDebug() << "bgHelper | " << QString(message);
+
+    std::string dispLogMsg = QString(message).toStdString();
+    int charCount = 60;  /* split 60 chars */
+    for (size_t i = 0; i < dispLogMsg.length(); i += charCount)
+    {
+        std::string toDispStr = dispLogMsg.substr(i, charCount);
+        displayMessage("bgHelper | " + QString::fromStdString(toDispStr));
+    }
+
+
 }
 
 void BackEnd::displayError(QAbstractSocket::SocketError socketError)
