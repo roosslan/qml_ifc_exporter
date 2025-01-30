@@ -1,6 +1,7 @@
 #include "backend.h"
 #include <QCheckbox>
 #include <QNetworkInterface>
+#include <QProcess>
 #include <windows.h>
 #include "qquickitem.h"
 #include <QQuickView>
@@ -9,6 +10,10 @@
 #include <QtCore/qabstractitemmodel.h>
 #include <QThread>
 
+void BackEnd::slotBtnNWCSettingsClicked()
+{
+    QProcess::execute("nwcsettings.exe");
+}
 
 BackEnd::BackEnd(QGuiApplication *parent, QObject* item)
 {
@@ -28,12 +33,13 @@ BackEnd::BackEnd(QGuiApplication *parent, QObject* item)
     }
     else
     {
+        qDebug() << "QTcp server started";
         connect(this, &BackEnd::newMessage, this, &BackEnd::displayMessage);
-        connect(m_server, &QTcpServer::newConnection, this, &BackEnd::newConnection);
+        connect(m_server, &QTcpServer::newConnection, this, &BackEnd::newSocketConnection);
     }
 }
 
-void BackEnd::newConnection()
+void BackEnd::newSocketConnection()
 {
     while (m_server->hasPendingConnections())
         appendToSocketList(m_server->nextPendingConnection());
@@ -47,6 +53,7 @@ void BackEnd::appendToSocketList(QTcpSocket* socket)
     connect(socket, &QAbstractSocket::errorOccurred, this, &BackEnd::displayError);
     // ui->comboBox_receiver->addItem(QString::number(socket->socketDescriptor()));
 //    displayMessage(QString("INFO :: Client with sockd: %1 has just entered").arg(socket->socketDescriptor()));
+//    socket->write("Sending msg to bgHelper");
 }
 
 void BackEnd::discardSocket()
@@ -74,8 +81,6 @@ void BackEnd::readSocket()
         std::string toDispStr = dispLogMsg.substr(i, charCount);
         displayMessage("bgHelper | " + QString::fromStdString(toDispStr));
     }
-
-
 }
 
 void BackEnd::displayError(QAbstractSocket::SocketError socketError)
@@ -113,6 +118,7 @@ void BackEnd::slotStopClicked()
 {
     WriteInfString("ControlFlags", "runNow", "false");
     qDebug() << "The control flag 'runNow' was set to false";
+
 }
 
 void BackEnd::DeleteInfSection(QString sectionName)
@@ -240,7 +246,7 @@ void BackEnd::slotRunClicked(const QString &utime)
     qDebug() << "The control flag 'runNow' was set to true";
 }
 
-void BackEnd::escSlot()
+void BackEnd::slotEscPressed()
 {
     m_Window->exit(0);
 }

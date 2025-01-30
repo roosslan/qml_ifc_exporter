@@ -12,7 +12,7 @@ Item
     property real defaultSpacing: 10;
     property real topOffset: 10;
 
-    signal qmlSignal(msg: string);
+    signal signalBtnNWCSettingsClicked();
     signal signalStopClicked();
     signal signalRunClicked(utime: string);
     signal escKeyPressedSignal();
@@ -179,7 +179,7 @@ Item
                 }
                 ListElement
                 {
-                    path: "\\\\ald-c666-666\\Projects\\Revit\\arm.rvt";
+                    path: "\\\\srv-c666-666\\Projects\\Revit\\arm.rvt";
                 }
                 ListElement
                 {
@@ -234,7 +234,7 @@ Item
             anchors.right: parent.right;
             anchors.bottom: parent.bottom;
             anchors.margins: mainWindow.defaultSpacing;
-            text: "►";
+            text: "🚀";
             width: 45;
             height: 45;
             onClicked:
@@ -255,7 +255,7 @@ Item
             anchors.right: btnSaveTrueToConfig.left;
             anchors.bottom: parent.bottom;
             anchors.margins: mainWindow.defaultSpacing;
-            text: "■";
+            text: "⬛";
             width: 45;
             height: 45;
             onClicked:
@@ -535,6 +535,26 @@ Item
                 Layout.fillWidth: true;
                 Layout.preferredHeight: 1;
                 color: "black";
+            }
+        }
+
+        ColumnLayout
+        {
+            id: colBtnNWCSettings;
+            enabled: itemsEnabled;
+            anchors.top: cbNavi.top;
+            anchors.right: borderRect.right;
+            RoundButton
+            {
+                id: btnNWCSettings;
+                text: "⚙️";
+                width: 15;
+                height: 15;
+                ToolTip.text: ("Настройки фвйлов NWC");
+                onClicked:
+                {
+                    signalBtnNWCSettingsClicked();
+                }
             }
         }
 

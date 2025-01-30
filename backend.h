@@ -25,9 +25,8 @@ class BackEnd : public QObject
 signals:
     void newMessage(QString);
 private slots:
-    void newConnection();
+    void newSocketConnection();
     void appendToSocketList(QTcpSocket* socket);
-
     void readSocket();
     void discardSocket();
     void displayError(QAbstractSocket::SocketError socketError);
@@ -38,8 +37,9 @@ public:
     QString infFile = appData + "\\alabuga_dev\\bimalde.inf";
     LPCWSTR infName = (const wchar_t*) infFile.utf16();
 public slots:
-    void escSlot();
+    void slotEscPressed();
     void slotStopClicked();
+    void slotBtnNWCSettingsClicked();
     void slotRunClicked(const QString &utime);
     void slotIsFileExists(QString fname);
     void AddInfString(QString keyAsValue);

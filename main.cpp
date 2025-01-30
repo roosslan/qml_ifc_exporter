@@ -25,6 +25,13 @@
 
 int main (int argc, char* argv[])
 {
+    QSharedMemory shared("62d60669-bb94-4a94-88bb-b964890a7e04");
+    if( !shared.create( 512, QSharedMemory::ReadWrite) )
+    {
+        qWarning() << "Окно экспорта IFC уже запущено";
+        exit(0);
+    }
+
     qInstallMessageHandler(bgMessageHandler);
     const int windowWidth = 1300;
     const int windowHeight = 870;
@@ -44,11 +51,11 @@ int main (int argc, char* argv[])
         QQuickStyle::setStyle("Material");
         engine.load(url);
     */
-    QQuickView view;    
+    QQuickView view;
 
     view.setSource(QUrl::fromLocalFile("../main.qml"));
 
-    QObject *item = view.rootObject();    
+    QObject *item = view.rootObject();
 
     BackEnd backEndRula(&qGUIApp, item);
     /* чтобы пользователь был уверен, что путь с последнего сеанса сохранился: */
@@ -56,7 +63,8 @@ int main (int argc, char* argv[])
     QQuickItem* QQuickText_IFCPath = item->findChild<QQuickItem*>("text_IFCPath");
     QQuickText_IFCPath->setProperty("text", exportDirectory);
 
-    QObject::connect(item, SIGNAL(escKeyPressedSignal()), &backEndRula, SLOT(escSlot()));
+    QObject::connect(item, SIGNAL(signalBtnNWCSettingsClicked()), &backEndRula, SLOT(slotBtnNWCSettingsClicked()));
+    QObject::connect(item, SIGNAL(escKeyPressedSignal()), &backEndRula, SLOT(slotEscPressed()));
     QObject::connect(item, SIGNAL(signalStopClicked()), &backEndRula, SLOT(slotStopClicked()));
     QObject::connect(item, SIGNAL(signalRunClicked(QString)), &backEndRula, SLOT(slotRunClicked(QString)));
     QObject::connect(item, SIGNAL(signalIsFileExists(QString)), &backEndRula, SLOT(slotIsFileExists(QString)));
