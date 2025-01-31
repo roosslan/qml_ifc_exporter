@@ -52,7 +52,7 @@ void BackEnd::appendToSocketList(QTcpSocket* socket)
     connect(socket, &QTcpSocket::disconnected, this, &BackEnd::discardSocket);
     connect(socket, &QAbstractSocket::errorOccurred, this, &BackEnd::displayError);
     // ui->comboBox_receiver->addItem(QString::number(socket->socketDescriptor()));
-//    displayMessage(QString("INFO :: Client with sockd: %1 has just entered").arg(socket->socketDescriptor()));
+    displayMessage(QString("Фоновой процесс %1 запуска Revit подключен!").arg(socket->socketDescriptor()));
 //    socket->write("Sending msg to bgHelper");
 }
 

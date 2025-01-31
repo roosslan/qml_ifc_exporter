@@ -25,12 +25,40 @@
 
 int main (int argc, char* argv[])
 {
-    QSharedMemory shared("62d60669-bb94-4a94-88bb-b964890a7e04");
+    /* Разрешаем только один запуск окна экспорта */
+    QSharedMemory shared("02d60619-bb94-4a94-88bb-b965590a7eaa");
     if( !shared.create( 512, QSharedMemory::ReadWrite) )
     {
-        qWarning() << "Окно экспорта IFC уже запущено";
+        QLibrary qLib;
+        char win_NameWin[] = "ExportTo", win_MessageWin[] = "Окно экспорта IFC уже запущено";
+        int iResult = 0x00;
+        bool unLoad = false;
+
+        qLib.setFileName("user32");
+        if(qLib.load())
+            if(qLib.isLoaded())
+            {
+                typedef int (*pMessageBox)(void* hWnd, char *lpText, char *lpCaption, unsigned int uType);
+                pMessageBox MessageBoxA = (pMessageBox)qLib.resolve("MessageBoxA");
+
+                if(MessageBoxA)
+                    iResult = MessageBoxA(nullptr, &win_NameWin[0x00], &win_MessageWin[0x00], 0x40);
+
+                MessageBoxA = nullptr;
+                unLoad = qLib.unload();
+            }
         exit(0);
     }
+
+    /* Передаём процесс в заголовок окна ExportTo */
+    QString pID = "BIMALDE - ExportTo ";
+    //if (argc == 2)
+        try {
+            pID += argv[1];
+        }
+        catch (...)
+        {
+        }
 
     qInstallMessageHandler(bgMessageHandler);
     const int windowWidth = 1300;
@@ -73,7 +101,7 @@ int main (int argc, char* argv[])
 
     view.show();
 
-    view.setTitle("BIMALDE - ExportTo");
+    view.setTitle(pID);
 
     view.setMaximumHeight(windowHeight);
     view.setMinimumHeight(windowHeight);
