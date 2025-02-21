@@ -15,7 +15,8 @@ static {
 #INCLUDEPATH += "C:\Program Files (x64)\Qt6\include\qt6"
 INCLUDEPATH += "C:\Program Files (x64)\Qt6.8\include\qt6"
 SOURCES += main.cpp \
-    backend.cpp
+    backend.cpp \
+    localsocketipcclient.cpp
 RESOURCES += \
     exportToWindow.qrc \
     shared\shared.qrc
@@ -28,7 +29,8 @@ ICON = resources/icon.ico
 win32: RC_FILE = resources/exportToWindow.rc
 
 HEADERS += \
-    backend.h
+    backend.h \
+    localsocketipcclient.h
 
 DISTFILES += \
     CustomBorderRect.qml \

@@ -12,15 +12,15 @@ Item
     property real defaultSpacing: 10;
     property real topOffset: 10;
 
-    signal signalBtnNWCSettingsClicked();
+    signal signalBtnIFCSettingsClicked();
     signal signalStopClicked();
-    signal signalRunClicked(utime: string);
+    signal signalRunClicked(utime: string, rightNow: int);
     signal escKeyPressedSignal();
-    signal signalIsFileExists(fname: string);
+    signal signalIsFileExists(fname: string, rvtVersion: string);
 
     id: mainWindow;
-    width: 1300;    
-    height: 870;    
+    width: 1300;
+    height: 870;
 
     focus: true;
     Keys.onEscapePressed: escKeyPressedSignal();
@@ -78,7 +78,7 @@ Item
                 anchors.fill: parent;
                 onClicked:
                 {
-                   signalIsFileExists(rsnEditBox.text);
+                   signalIsFileExists(rsnEditBox.text, cbVersion.currentText);
                    if (fileExists)
                    {
                         if ( rsnEditBox.text !== "")
@@ -239,12 +239,41 @@ Item
             height: 45;
             onClicked:
             {
-                var selectedTime = uTime.getTime();
+                onClicked: menuLaunch.open();
+            }
 
-                lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Назначенное время " +  selectedTime.hour.toString() + ":" + selectedTime.minute.toString()});
-                signalRunClicked(selectedTime.hour.toString() + ":" + selectedTime.minute.toString());
-                itemsEnabled = false;
-                btnStop.enabled = true;
+            Menu
+            {
+                id: menuLaunch;
+                y: btnSaveTrueToConfig.height;
+                MenuItem
+                {
+                    id: menuRunNow;
+                    text: "Запустить сейчас";
+                    onTriggered:
+                    {
+                        var selectedTime = new Date().toLocaleString(Qt.locale(),"hh:mm");
+
+                        lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Запуск прямо сейчас (в " +  selectedTime + ")"});
+                        signalRunClicked(selectedTime, 1);   /* "1" - запустить прямо сейчас */
+                        itemsEnabled = false;
+                        btnStop.enabled = true;
+                    }
+                }
+                MenuItem
+                {
+                    id: menuRunScheduled;
+                    text: "По указанному времени";
+                    onTriggered:
+                    {
+                        var selectedTime = uTime.getTime();
+
+                        lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Назначенное время " +  selectedTime.hour.toString() + ":" + selectedTime.minute.toString()});
+                        signalRunClicked(selectedTime.hour.toString() + ":" + selectedTime.minute.toString(), 0);
+                        itemsEnabled = false;
+                        btnStop.enabled = true;
+                    }
+                }
             }
         }
 
@@ -438,8 +467,8 @@ Item
             {
                 id: btnBrowseFolder;
                 text: "...";
-                width: 15;
-                height: 15;
+                /* width: 15;
+                height: 15; */
                 onClicked:
                 {
                     selectDirectoryDialog.open();
@@ -490,6 +519,24 @@ Item
                     ListElement { text: "IFC4RV"    }
                 }
             }
+
+            RoundButton
+            {
+                id: btnIFCSettings;
+                text: "⚙️";
+                enabled: itemsEnabled;
+                anchors.left: cbIFCVersion.right;
+                anchors.leftMargin: 15;
+                y: -5;
+                /* width: 30;
+                height: 30; */
+                ToolTip.text: "Настройки фaйлов IFC";
+                ToolTip.visible: hovered;
+                onClicked:
+                {
+                    signalBtnIFCSettingsClicked();
+                }
+            }
         }
 
 /************************************************ Версия IFC **********************************/
@@ -503,7 +550,7 @@ Item
             objectName: "cbNavi";
             enabled: itemsEnabled;
             anchors.top: hRow.bottom;
-            anchors.topMargin: 20;
+            anchors.topMargin: 40;
             x: 35
             checked: true;
             text: "Navisworks";
@@ -513,7 +560,7 @@ Item
         {
             anchors.top: cbNavi.verticalCenter;
             x: 10;
-            Rectangle
+            Rectangle   /* Горизонтальная линия */
             {
                 id: lineNavi;
                 width: 20;
@@ -538,26 +585,6 @@ Item
             }
         }
 
-        ColumnLayout
-        {
-            id: colBtnNWCSettings;
-            enabled: itemsEnabled;
-            anchors.top: cbNavi.top;
-            anchors.right: borderRect.right;
-            RoundButton
-            {
-                id: btnNWCSettings;
-                text: "⚙️";
-                width: 15;
-                height: 15;
-                ToolTip.text: ("Настройки фвйлов NWC");
-                onClicked:
-                {
-                    signalBtnNWCSettingsClicked();
-                }
-            }
-        }
-
 /******************************* Navisworks **********************************/
 
         FileDialog
@@ -572,9 +599,14 @@ Item
                 // remove prefixed "file:///"
                 path = path.replace(/^(file:\/{3})/,"");
                 // unescape html codes like '%23' for '#'
-                listModel.append({"path": decodeURIComponent(path) });
-                fileDialog.selectedFile = "";
-                fileDialog.close();
+
+                signalIsFileExists(decodeURIComponent(path), cbVersion.currentText);
+                if (fileExists)
+                {
+                    listModel.append({"path": decodeURIComponent(path) });
+                    fileDialog.selectedFile = "";
+                    fileDialog.close();
+                }
             }
         }
 
@@ -593,7 +625,6 @@ Item
                 selectDirectoryDialog.close();
             }
         }
-
     }    
 
     property var splashWindow: Window

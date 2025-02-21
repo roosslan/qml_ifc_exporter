@@ -30,7 +30,7 @@ int main (int argc, char* argv[])
     if( !shared.create( 512, QSharedMemory::ReadWrite) )
     {
         QLibrary qLib;
-        char win_NameWin[] = "ExportTo", win_MessageWin[] = "Окно экспорта IFC уже запущено";
+        char win_NameWin[] = "BIMALDE - ExportTo", win_MessageWin[] = "Окно экспорта IFC уже запущено";
         int iResult = 0x00;
         bool unLoad = false;
 
@@ -53,12 +53,12 @@ int main (int argc, char* argv[])
     /* Передаём процесс в заголовок окна ExportTo */
     QString pID = "BIMALDE - ExportTo ";
     //if (argc == 2)
-        try {
-            pID += argv[1];
-        }
-        catch (...)
-        {
-        }
+    try {
+        pID += argv[1];
+    }
+    catch (...)
+    {
+    }
 
     qInstallMessageHandler(bgMessageHandler);
     const int windowWidth = 1300;
@@ -69,9 +69,12 @@ int main (int argc, char* argv[])
     const QUrl url(QStringLiteral("../main.qml"));
     QQmlApplicationEngine engine;
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
-             &qGUIApp, [url](QObject *obj, const QUrl &objUrl){
-                 if (!obj && url == objUrl)
-                     QCoreApplication::exit(-1);                        }, Qt::QueuedConnection);
+            &qGUIApp, [url](QObject *obj, const QUrl &objUrl)
+            {
+                if (!obj && url == objUrl)
+                    QCoreApplication::exit(-1);
+
+            }, Qt::QueuedConnection);
 
     /*  engine.clearComponentCache();       //unload all QML
         engine.exit(0);                     //destroy any existing QQmlEngine instance(s)
@@ -85,17 +88,17 @@ int main (int argc, char* argv[])
 
     QObject *item = view.rootObject();
 
-    BackEnd backEndRula(&qGUIApp, item);
+    BackEnd backEndRula(&qGUIApp, item, (HWND)view.winId());
     /* чтобы пользователь был уверен, что путь с последнего сеанса сохранился: */
     QString exportDirectory = backEndRula.ReadInfString("DestinationDirs", "DefaultDestDir");
     QQuickItem* QQuickText_IFCPath = item->findChild<QQuickItem*>("text_IFCPath");
     QQuickText_IFCPath->setProperty("text", exportDirectory);
 
-    QObject::connect(item, SIGNAL(signalBtnNWCSettingsClicked()), &backEndRula, SLOT(slotBtnNWCSettingsClicked()));
+    QObject::connect(item, SIGNAL(signalBtnIFCSettingsClicked()), &backEndRula, SLOT(slotBtnIFCSettingsClicked()));
     QObject::connect(item, SIGNAL(escKeyPressedSignal()), &backEndRula, SLOT(slotEscPressed()));
     QObject::connect(item, SIGNAL(signalStopClicked()), &backEndRula, SLOT(slotStopClicked()));
-    QObject::connect(item, SIGNAL(signalRunClicked(QString)), &backEndRula, SLOT(slotRunClicked(QString)));
-    QObject::connect(item, SIGNAL(signalIsFileExists(QString)), &backEndRula, SLOT(slotIsFileExists(QString)));
+    QObject::connect(item, SIGNAL(signalRunClicked(QString, int)), &backEndRula, SLOT(slotRunClicked(QString, int)));
+    QObject::connect(item, SIGNAL(signalIsFileExists(QString, QString)), &backEndRula, SLOT(slotIsFileExists(QString, QString)));
 
     view.setIcon(QIcon("resources/ico.ico"));
 

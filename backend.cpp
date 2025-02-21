@@ -9,21 +9,32 @@
 #include <QFileDialog>
 #include <QtCore/qabstractitemmodel.h>
 #include <QThread>
+#include <sstream>
+#include "localsocketipcclient.h"
 
-void BackEnd::slotBtnNWCSettingsClicked()
+void BackEnd::slotBtnIFCSettingsClicked()
 {
-    QProcess::execute("nwcsettings.exe");
+    QStringList args;
+    std::uint32_t intHwnd = reinterpret_cast<std::uint32_t>(m_hwnd);
+
+    std::stringstream ss;
+    std::string s_hwnd;
+    ss << std::hex << intHwnd;
+    ss >> s_hwnd;
+
+    args.append(QString::fromStdString(s_hwnd));
+    QProcess::startDetached("ifcsettings.exe", args);
 }
 
-BackEnd::BackEnd(QGuiApplication *parent, QObject* item)
+BackEnd::BackEnd(QGuiApplication *parent, QObject* item, HWND hWnd)
 {
     m_Window = parent;
     m_item = item;
+    m_hwnd = hWnd;
 
     QThread* cThread = new QThread();
 
     m_server = new QTcpServer(this);
-
     m_server->moveToThread(cThread);
 
     if (!m_server->listen(QHostAddress::Any, 6667))
@@ -173,8 +184,22 @@ QString BackEnd::ReadInfString(QString sectionName, QString keyName)
     return s_Ret;
 }
 
-void BackEnd::slotIsFileExists(QString fname)
+void BackEnd::slotIsFileExists(QString fname, QString rvtVersion)
 {
+    QStringList args;
+    args.append(fname);
+    args.append(rvtVersion);
+
+    std::uint32_t intHwnd = reinterpret_cast<std::uint32_t>(m_hwnd);
+
+    std::stringstream ss;
+    std::string s_hwnd;
+    ss << intHwnd;
+    ss >> s_hwnd;
+
+    args.append(QString::fromStdString(s_hwnd));
+    QProcess::startDetached("rvtversion.exe", args);
+
     QQuickItem* lvMain = m_item->findChild<QQuickItem*>("o_lvMain");
     QObject* listModel = lvMain->children()[1];
 
@@ -195,7 +220,7 @@ void BackEnd::slotIsFileExists(QString fname)
 }
 
 
-void BackEnd::slotRunClicked(const QString &utime)
+void BackEnd::slotRunClicked(const QString &utime, const int rightNow)
 {
     DeleteInfSection("SourceDisksFiles");
     AppendInfSection("SourceDisksFiles");
@@ -244,7 +269,14 @@ void BackEnd::slotRunClicked(const QString &utime)
     }
     WriteInfString("ControlFlags", "runNow", "true");
     qDebug() << "The control flag 'runNow' was set to true";
+
+    if(rightNow)    /* Запустить ПРЯМО сейчас! == 1 */
+    {
+        LocalSocketIpcClient* lp = new LocalSocketIpcClient("\\\\.\\pipe\\bghelperpipe", this);
+        lp->send_MessageToServer("START_IMMEDIATELY");
+    }
 }
+
 
 void BackEnd::slotEscPressed()
 {
