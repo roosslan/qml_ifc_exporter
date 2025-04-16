@@ -14,6 +14,7 @@
 
 void BackEnd::slotBtnIFCSettingsClicked()
 {
+    /* Передаем окну IFCSettings наш handle, чтобы ifcSettings показался модально */
     QStringList args;
     std::uint32_t intHwnd = reinterpret_cast<std::uint32_t>(m_hwnd);
 
@@ -63,7 +64,7 @@ void BackEnd::appendToSocketList(QTcpSocket* socket)
     connect(socket, &QTcpSocket::disconnected, this, &BackEnd::discardSocket);
     connect(socket, &QAbstractSocket::errorOccurred, this, &BackEnd::displayError);
     // ui->comboBox_receiver->addItem(QString::number(socket->socketDescriptor()));
-    displayMessage(QString("Фоновой процесс %1 запуска Revit подключен!").arg(socket->socketDescriptor()));
+    displayMessage(QString("| Фоновой процесс %1 запуска Revit подключен!").arg(socket->socketDescriptor()));
 //    socket->write("Sending msg to bgHelper");
 }
 
@@ -120,7 +121,7 @@ void BackEnd::displayMessage(const QString& str)
     QAbstractListModel* qLmLog = qobject_cast<QAbstractListModel*>(lmLog);
     QVariant returnedValue;
     QVariant lmMsg = str;
-    QMetaObject::invokeMethod(lmLog, "addRow",
+    QMetaObject::invokeMethod(lmLog, "addRow",  /* addRow function defined in QML-file */
                               Q_RETURN_ARG(QVariant, returnedValue),
                               Q_ARG(QVariant, lmMsg));
 }
@@ -129,7 +130,6 @@ void BackEnd::slotStopClicked()
 {
     WriteInfString("ControlFlags", "runNow", "false");
     qDebug() << "The control flag 'runNow' was set to false";
-
 }
 
 void BackEnd::DeleteInfSection(QString sectionName)

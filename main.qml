@@ -188,7 +188,7 @@ Item
 */
                 function removeLastRow(remove)
                 {
-                    fileExists = remove;                    
+                    fileExists = remove;
                 }
             }
         }
@@ -210,20 +210,23 @@ Item
                     text: msg
                 }
 
-
-                model: ListModel
+            model: ListModel
+            {
+                id: lmLogModel;
+                ListElement
                 {
-                    id: lmLogModel;
-                    ListElement
-                    {
-                        msg: "Подготовка к выгрузке";
-                    }
-
-                    function addRow(caption)
-                    {
-                        lmLogModel.append({"msg": caption });
-                    }
+                    msg: "Подготовка к выгрузке";
                 }
+
+                function addRow(caption)
+                {
+                    lmLogModel.append({"msg": new Date().toLocaleTimeString() + " " +caption});
+                }
+            }
+            onCountChanged: {
+                lvLog.currentIndex = lvLog.count - 1;
+                lvLog.positionViewAtEnd();
+            }
         }
 
         RoundButton
@@ -294,6 +297,38 @@ Item
                 itemsEnabled = true;
             }
         }
+
+        TextEdit
+        {
+            id: fakeCopyClipboardTextEdit
+            visible: false
+        }
+        RoundButton
+        {
+            id: btnClipboard;
+            anchors.left: lvLog.left;
+            anchors.bottom: parent.bottom;
+            anchors.bottomMargin: 10;
+
+            ToolTip.text: "Копировать журнал в буфер и очистить";
+            ToolTip.visible: hovered;
+            text: "📋";
+            width: 45;
+            height: 45;
+            onClicked:
+            {
+                fakeCopyClipboardTextEdit.text = "";
+                for (var i = 0; i < lmLogModel.count; i++ )
+                {
+                    lvLog.currentIndex = i;
+                    fakeCopyClipboardTextEdit.text += lmLogModel.get(lvLog.currentIndex).msg + "\n";
+                }
+                fakeCopyClipboardTextEdit.selectAll();
+                fakeCopyClipboardTextEdit.copy();
+                lmLogModel.clear();
+            }
+        }
+
 /************************************* Настройки экспорта ************************************/
         LabelALDE
         {
@@ -625,7 +660,7 @@ Item
                 selectDirectoryDialog.close();
             }
         }
-    }    
+    }
 
     property var splashWindow: Window
     {
