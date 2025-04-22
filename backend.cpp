@@ -16,14 +16,9 @@ void BackEnd::slotBtnIFCSettingsClicked()
 {
     /* Передаем окну IFCSettings наш handle, чтобы ifcSettings показался модально */
     QStringList args;
-    std::uint32_t intHwnd = reinterpret_cast<std::uint32_t>(m_hwnd);
 
-    std::stringstream ss;
-    std::string s_hwnd;
-    ss << std::hex << intHwnd;
-    ss >> s_hwnd;
 
-    args.append(QString::fromStdString(s_hwnd));
+    args.append(QString::fromStdString(m_str_hwnd));
     QProcess::startDetached("ifcsettings.exe", args);
 }
 
@@ -32,6 +27,13 @@ BackEnd::BackEnd(QGuiApplication *parent, QObject* item, HWND hWnd)
     m_Window = parent;
     m_item = item;
     m_hwnd = hWnd;
+
+    std::uint32_t intHwnd = reinterpret_cast<std::uint32_t>(m_hwnd);
+
+    std::stringstream ss;
+
+    ss << std::hex << intHwnd;
+    ss >> m_str_hwnd;
 
     QThread* cThread = new QThread();
 
@@ -64,7 +66,8 @@ void BackEnd::appendToSocketList(QTcpSocket* socket)
     connect(socket, &QTcpSocket::disconnected, this, &BackEnd::discardSocket);
     connect(socket, &QAbstractSocket::errorOccurred, this, &BackEnd::displayError);
     // ui->comboBox_receiver->addItem(QString::number(socket->socketDescriptor()));
-    displayMessage(QString("| Фоновой процесс %1 запуска Revit подключен!").arg(socket->socketDescriptor()));
+    displayMessage(QString("| Подготовка к выгрузке ") + QString::fromStdString(m_str_hwnd));
+    displayMessage(QString("| Фоновой процесс %1 запуска Revit подключен!").arg(socket->socketDescriptor()));    
 //    socket->write("Sending msg to bgHelper");
 }
 

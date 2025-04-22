@@ -215,7 +215,7 @@ Item
                 id: lmLogModel;
                 ListElement
                 {
-                    msg: "Подготовка к выгрузке";
+                    msg: "";
                 }
 
                 function addRow(caption)

@@ -21,6 +21,7 @@ class BackEnd : public QObject
     QTcpSocket tcpSocket;
     QObject *m_item;
     HWND m_hwnd;
+    std::string m_str_hwnd; /* Для передачи в окно IFCSettings */
     QTcpServer* m_server;
     QString appData = getenv("appdata");
     QSet<QTcpSocket*> connection_set;
