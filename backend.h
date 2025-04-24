@@ -12,6 +12,7 @@
 #include <QSet>
 #include <QStandardPaths>
 #include <qquickview.h>
+#include "simpleini.h"
 
 class BackEnd : public QObject
 {
@@ -23,7 +24,13 @@ class BackEnd : public QObject
     HWND m_hwnd;
     std::string m_str_hwnd; /* Для передачи в окно IFCSettings */
     QTcpServer* m_server;
+
     QString appData = getenv("appdata");
+
+
+    /* Так как все INI-файлы для WritePrivateProfileStringW всегда ANSI, пишем сами - как UTF8 с русскими символами */
+    CSimpleIniW configFile;
+
     QSet<QTcpSocket*> connection_set;
 signals:
     void newMessage(QString);
@@ -37,7 +44,10 @@ private slots:
     void displayMessage(const QString& str);
 public:    
     BackEnd(QGuiApplication *parent, QObject* item, HWND hWnd);
+    ~BackEnd();
     QString infFile = appData + "\\alabuga_dev\\bimalde.inf";
+
+    /* Для DeleteInfSection */
     LPCWSTR infName = (const wchar_t*) infFile.utf16();
 public slots:
     void slotEscPressed();
@@ -45,8 +55,6 @@ public slots:
     void slotBtnIFCSettingsClicked();
     void slotRunClicked(const QString &utime, const int rightNow);
     void slotIsFileExists(QString fname, QString rvtVersion);
-    void AddInfString(QString keyAsValue);
-    void AppendInfSection(QString sectionName);
     QString ReadInfString(QString sectionName, QString keyName);
     void WriteInfString(QString sectionName, QString keyName, QString value);
     void DeleteInfSection(QString sectionName);

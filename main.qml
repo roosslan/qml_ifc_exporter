@@ -526,9 +526,10 @@ Item
             {
                 id: labelIFCVersion;
                 anchors.top: horizIFC_Col_text.bottom;
-                text: "Версия IFC:";
+                text: "Настройки IFC:";
             }
 
+            /* 24.04.2025 Выбор версии IFC перенесен в отд. программу/окно
             ComboBox
             {
                 id: cbIFCVersion;
@@ -554,13 +555,14 @@ Item
                     ListElement { text: "IFC4RV"    }
                 }
             }
+            */
 
             RoundButton
             {
                 id: btnIFCSettings;
                 text: "⚙️";
                 enabled: itemsEnabled;
-                anchors.left: cbIFCVersion.right;
+                anchors.left: labelIFCVersion.right;
                 anchors.leftMargin: 15;
                 y: -5;
                 /* width: 30;

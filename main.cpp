@@ -89,16 +89,18 @@ int main (int argc, char* argv[])
     QObject *item = view.rootObject();
 
     BackEnd backEndRula(&qGUIApp, item, (HWND)view.winId());
-    /* чтобы пользователь был уверен, что путь с последнего сеанса сохранился: */
-    QString exportDirectory = backEndRula.ReadInfString("DestinationDirs", "DefaultDestDir");
-    QQuickItem* QQuickText_IFCPath = item->findChild<QQuickItem*>("text_IFCPath");
-    QQuickText_IFCPath->setProperty("text", exportDirectory);
 
     QObject::connect(item, SIGNAL(signalBtnIFCSettingsClicked()), &backEndRula, SLOT(slotBtnIFCSettingsClicked()));
     QObject::connect(item, SIGNAL(escKeyPressedSignal()), &backEndRula, SLOT(slotEscPressed()));
     QObject::connect(item, SIGNAL(signalStopClicked()), &backEndRula, SLOT(slotStopClicked()));
     QObject::connect(item, SIGNAL(signalRunClicked(QString, int)), &backEndRula, SLOT(slotRunClicked(QString, int)));
     QObject::connect(item, SIGNAL(signalIsFileExists(QString, QString)), &backEndRula, SLOT(slotIsFileExists(QString, QString)));
+
+    /* Чтобы пользователь был уверен, что путь с последнего сеанса сохранился: */
+    QString exportDirectory = backEndRula.ReadInfString("DestinationDirs", "DefaultDestDir");
+    QQuickItem* QQuickText_IFCPath = item->findChild<QQuickItem*>("text_IFCPath");
+    QQuickText_IFCPath->setProperty("text", exportDirectory);
+
 
     view.setIcon(QIcon("resources/ico.ico"));
 

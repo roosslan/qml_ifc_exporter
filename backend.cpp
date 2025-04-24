@@ -17,7 +17,6 @@ void BackEnd::slotBtnIFCSettingsClicked()
     /* Передаем окну IFCSettings наш handle, чтобы ifcSettings показался модально */
     QStringList args;
 
-
     args.append(QString::fromStdString(m_str_hwnd));
     QProcess::startDetached("ifcsettings.exe", args);
 }
@@ -51,6 +50,16 @@ BackEnd::BackEnd(QGuiApplication *parent, QObject* item, HWND hWnd)
         connect(this, &BackEnd::newMessage, this, &BackEnd::displayMessage);
         connect(m_server, &QTcpServer::newConnection, this, &BackEnd::newSocketConnection);
     }
+
+    /* Так как все INI-файлы для WritePrivateProfileStringW всегда ANSI, пишем сами - как UTF8 с русскими символами */
+    configFile.SetUnicode();
+    SI_Error rc = configFile.LoadFile(infFile.toStdString().c_str());
+    /* if (rc < 0){ qDebug() << "Cannot open INF-file " << infFile; }; */
+}
+
+BackEnd::~BackEnd()
+{
+    configFile.Reset();
 }
 
 void BackEnd::newSocketConnection()
@@ -67,8 +76,8 @@ void BackEnd::appendToSocketList(QTcpSocket* socket)
     connect(socket, &QAbstractSocket::errorOccurred, this, &BackEnd::displayError);
     // ui->comboBox_receiver->addItem(QString::number(socket->socketDescriptor()));
     displayMessage(QString("| Подготовка к выгрузке ") + QString::fromStdString(m_str_hwnd));
-    displayMessage(QString("| Фоновой процесс %1 запуска Revit подключен!").arg(socket->socketDescriptor()));    
-//    socket->write("Sending msg to bgHelper");
+    displayMessage(QString("| Фоновой процесс %1 запуска Revit подключен!").arg(socket->socketDescriptor()));
+//   socket->write("Sending msg to bgHelper");
 }
 
 void BackEnd::discardSocket()
@@ -76,7 +85,7 @@ void BackEnd::discardSocket()
     QTcpSocket* socket = reinterpret_cast<QTcpSocket*>(sender());
     QSet<QTcpSocket*>::iterator it = connection_set.find(socket);
     if (it != connection_set.end()){
-//        displayMessage(QString("INFO :: A client : %1 has just left").arg(socket->socketDescriptor()));
+//      displayMessage(QString("INFO :: A client : %1 has just left").arg(socket->socketDescriptor()));
         connection_set.remove(*it);
     }
 
@@ -131,59 +140,26 @@ void BackEnd::displayMessage(const QString& str)
 
 void BackEnd::slotStopClicked()
 {
-    WriteInfString("ControlFlags", "runNow", "false");
-    qDebug() << "The control flag 'runNow' was set to false";
+    WriteInfString("ControlFlags", "Enabled", "false");
+    qDebug() << "The control flag 'Enabled' was set to false";
 }
 
 void BackEnd::DeleteInfSection(QString sectionName)
 {
-    LPCWSTR wsSection = (const wchar_t*) sectionName.utf16();
-    WritePrivateProfileStringW(wsSection, NULL, NULL, infName);
-    wsSection = nullptr;
-}
-
-void BackEnd::AppendInfSection(QString sectionName)
-{
-    QFile f(infFile);
-    if (f.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append))
-    {
-        QTextStream outInf(&f);
-        outInf << "[" << sectionName << "]" << "\n";
-    }
-    f.flush();
-    f.close();
-}
-
-void BackEnd::AddInfString(QString keyAsValue)
-{
-    QFile f(infFile);
-    if (f.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append))
-    {
-        QTextStream outInf(&f);        
-        outInf << keyAsValue << "\n";
-    }
-    f.flush();
-    f.close();
+    configFile.Delete(sectionName.toStdWString().c_str(), nullptr);
 }
 
 void BackEnd::WriteInfString(QString sectionName, QString keyName, QString value)
 {
-    LPCWSTR wsSection = (const wchar_t*) sectionName.utf16();
-    LPCWSTR wsKey = (const wchar_t*) keyName.utf16();
-    LPCWSTR wsValue = (const wchar_t*) value.utf16();
-    WritePrivateProfileStringW(wsSection, wsKey, wsValue, infName);
-    wsSection = wsKey = wsValue = nullptr;
+    /* Такой wrapper получился после замены WritePrivateProfileStringW на ф-ции simpleini */
+    configFile.SetValue(sectionName.toStdWString().c_str(), keyName.toStdWString().c_str(), value.toStdWString().c_str());
+    SI_Error rc = configFile.SaveFile(infFile.toStdString().c_str(), false);
 }
 
 QString BackEnd::ReadInfString(QString sectionName, QString keyName)
 {
-    wchar_t wc_Val[_MAX_FNAME] = L"";
-
-    LPCWSTR wsSection = (const wchar_t*) sectionName.utf16();
-    LPCWSTR wsKey = (const wchar_t*) keyName.utf16();
-    GetPrivateProfileStringW(wsSection, wsKey, nullptr, wc_Val, std::size(wc_Val), infName);
+    auto wc_Val = configFile.GetValue(sectionName.toStdWString().c_str(), keyName.toStdWString().c_str(), L"ОШИБКА_ЧТЕНИЯ_ПУТИ_КАТАЛОГА");
     QString s_Ret = QString::fromWCharArray(wc_Val);
-    wsSection = wsKey = nullptr;
     return s_Ret;
 }
 
@@ -201,7 +177,7 @@ void BackEnd::slotIsFileExists(QString fname, QString rvtVersion)
     ss >> s_hwnd;
 
     args.append(QString::fromStdString(s_hwnd));
-    QProcess::startDetached("rvtversion.exe", args);
+    QProcess::startDetached("rvthelper.exe", args);
 
     QQuickItem* lvMain = m_item->findChild<QQuickItem*>("o_lvMain");
     QObject* listModel = lvMain->children()[1];
@@ -226,7 +202,6 @@ void BackEnd::slotIsFileExists(QString fname, QString rvtVersion)
 void BackEnd::slotRunClicked(const QString &utime, const int rightNow)
 {
     DeleteInfSection("SourceDisksFiles");
-    AppendInfSection("SourceDisksFiles");
 
     WriteInfString("ControlFlags", "Time", utime);
 
@@ -249,10 +224,12 @@ void BackEnd::slotRunClicked(const QString &utime, const int rightNow)
     QString sIFCPath = QQuickText_IFCPath->property("text").toString();
     WriteInfString("DestinationDirs", "DefaultDestDir", sIFCPath);
 
-    QQuickItem* qtextIFCVers = m_item->findChild<QQuickItem*>("row_IFCVersion");
-    QObject* cbIFCvers = qtextIFCVers->children()[1];
-    QString ifcVersion = cbIFCvers->property("currentText").toString();
-    WriteInfString("ControlFlags", "IFCVersion", ifcVersion);
+    /* 24.04.2025 Выбор версии IFC перенесен в отд. программу/окно  */
+    /*
+    /* QQuickItem* qtextIFCVers = m_item->findChild<QQuickItem*>("row_IFCVersion");
+    /* QObject* cbIFCvers = qtextIFCVers->children()[1];
+    /* QString ifcVersion = cbIFCvers->property("currentText").toString();
+    /* WriteInfString("ControlFlags", "IFCVersion", ifcVersion);    */
 
     QQuickItem* lvMain = m_item->findChild<QQuickItem*>("o_lvMain");
     QObject* listModel = lvMain->children()[1];
@@ -263,15 +240,16 @@ void BackEnd::slotRunClicked(const QString &utime, const int rightNow)
         for (int i = 0; i < qmlListModel->rowCount(); ++i)
         {
             QString rvtFileName = qmlListModel->data(qmlListModel->index(i, 0), 0).toString();
-            AddInfString(rvtFileName);
+            WriteInfString("SourceDisksFiles", rvtFileName, "");
         }
     }
     else
     {
         qDebug() << "Getting *.RVT files list is failed!";
     }
-    WriteInfString("ControlFlags", "runNow", "true");
-    qDebug() << "The control flag 'runNow' was set to true";
+
+    WriteInfString("ControlFlags", "Enabled", "true");
+    qDebug() << "The control flag 'Enabled' was set to true";
 
     if(rightNow)    /* Запустить ПРЯМО сейчас! == 1 */
     {
