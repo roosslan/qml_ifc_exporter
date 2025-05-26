@@ -50,16 +50,11 @@ BackEnd::BackEnd(QGuiApplication *parent, QObject* item, HWND hWnd)
         connect(this, &BackEnd::newMessage, this, &BackEnd::displayMessage);
         connect(m_server, &QTcpServer::newConnection, this, &BackEnd::newSocketConnection);
     }
-
-    /* Так как все INI-файлы для WritePrivateProfileStringW всегда ANSI, пишем сами - как UTF8 с русскими символами */
-    configFile.SetUnicode();
-    SI_Error rc = configFile.LoadFile(infFile.toStdString().c_str());
-    /* if (rc < 0){ qDebug() << "Cannot open INF-file " << infFile; }; */
 }
 
 BackEnd::~BackEnd()
 {
-    configFile.Reset();
+    /* configFile.Reset(); */
 }
 
 void BackEnd::newSocketConnection()
@@ -146,18 +141,31 @@ void BackEnd::slotStopClicked()
 
 void BackEnd::DeleteInfSection(QString sectionName)
 {
+    /* Так как все INI-файлы для WritePrivateProfileStringW всегда ANSI, пишем сами - как UTF8 с русскими символами */
+    configFile.SetUnicode();
+    SI_Error rc = configFile.LoadFile(infFile.toStdString().c_str());
+    /* if (rc < 0){ qDebug() << "Cannot open INF-file " << infFile; }; */
     configFile.Delete(sectionName.toStdWString().c_str(), nullptr);
+    rc = configFile.SaveFile(infFile.toStdString().c_str(), false);
 }
 
 void BackEnd::WriteInfString(QString sectionName, QString keyName, QString value)
 {
+    /* Так как все INI-файлы для WritePrivateProfileStringW всегда ANSI, пишем сами - как UTF8 с русскими символами */
+    configFile.SetUnicode();
+    SI_Error rc = configFile.LoadFile(infFile.toStdString().c_str());
+    /* if (rc < 0){ qDebug() << "Cannot open INF-file " << infFile; }; */
     /* Такой wrapper получился после замены WritePrivateProfileStringW на ф-ции simpleini */
     configFile.SetValue(sectionName.toStdWString().c_str(), keyName.toStdWString().c_str(), value.toStdWString().c_str());
-    SI_Error rc = configFile.SaveFile(infFile.toStdString().c_str(), false);
+    rc = configFile.SaveFile(infFile.toStdString().c_str(), false);
 }
 
 QString BackEnd::ReadInfString(QString sectionName, QString keyName)
 {
+    /* Так как все INI-файлы для WritePrivateProfileStringW всегда ANSI, пишем сами - как UTF8 с русскими символами */
+    configFile.SetUnicode();
+    SI_Error rc = configFile.LoadFile(infFile.toStdString().c_str());
+    /* if (rc < 0){ qDebug() << "Cannot open INF-file " << infFile; }; */
     auto wc_Val = configFile.GetValue(sectionName.toStdWString().c_str(), keyName.toStdWString().c_str(), L"ОШИБКА_ЧТЕНИЯ_ПУТИ_КАТАЛОГА");
     QString s_Ret = QString::fromWCharArray(wc_Val);
     return s_Ret;
@@ -197,7 +205,6 @@ void BackEnd::slotIsFileExists(QString fname, QString rvtVersion)
                               Q_RETURN_ARG(QVariant, returnedValue),
                               Q_ARG(QVariant, boolMsg));
 }
-
 
 void BackEnd::slotRunClicked(const QString &utime, const int rightNow)
 {
