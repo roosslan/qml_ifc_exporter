@@ -16,7 +16,14 @@ Item
     signal signalStopClicked();
     signal signalRunClicked(utime: string, rightNow: int);
     signal escKeyPressedSignal();
+    signal dateSelected(udate: string);
     signal signalIsFileExists(fname: string, rvtVersion: string);
+
+    Connections
+    {
+        target: datePicker;
+        onDatePicked: { console.log("Pressed"); }
+    }
 
     id: mainWindow;
     width: 1300;
@@ -24,6 +31,18 @@ Item
 
     focus: true;
     Keys.onEscapePressed: escKeyPressedSignal();
+
+    MouseArea
+    {
+        anchors.fill: parent;
+        onClicked:
+            function(mouse){
+                if (!datePicker.contains(Qt.point(mouse.x, mouse.y)))
+                {
+                        datePicker.visible = false; /*  clicked outside datePicker;  */
+                }
+            }
+    }
 
     Rectangle
     {
@@ -403,7 +422,7 @@ Item
 /************************************* Версия Revit ******************************************/
 
 
-/************************************* Время выгрузки ****************************************/
+/************************************* Время/Дата выгрузки ****************************************/
         Row
         {
             id: horizonRow;
@@ -434,6 +453,59 @@ Item
                 // console.log(i.minute)
             }
         }
+
+        Row
+        {
+            id: horizontalDateRow;
+
+            anchors.top: horizRow.bottom;
+            anchors.topMargin: 25;
+            anchors.leftMargin: 25;
+            x: 290;
+            LabelALDE
+            {
+                id: labelDateText;
+                text: "Дата выгрузки: ";
+            }
+            LabelALDE
+            {
+                id: labelDate;
+                text: Qt.formatDateTime(new Date(), "dd.MM.yy" + "   ");
+            }
+
+            RoundButton
+            {
+                id: btnPickDate;
+                anchors.bottom: parent.bottom;
+                anchors.bottomMargin: 0;
+                anchors.topMargin: 20;
+                width: 14;
+                height: 14;
+                onClicked:
+                {
+                    datePicker.visible = true;
+                }
+            }
+        }
+
+        JWDMDatePicker
+        {
+            id: datePicker;
+            visible: false;
+            enabled: mainWindow.itemsEnabled;
+            anchors.bottom: lvMain.bottom;
+            anchors.topMargin: 10;
+            x: 365;
+            width: 200;             // Font Size <-> depends!
+            height: 300;
+            onDatePicked: (udate) =>
+            {
+                var options = { year: 'numeric', month: 'numeric', day: 'numeric' };
+                labelDate.text = udate.toLocaleDateString("ru-RU", options) + "   ";
+                dateSelected(udate.toLocaleDateString("ru-RU", options));
+            };
+        }
+
 /************************************* Время выгрузки ****************************************/
 
 /******************************* Industry Foundation Classes **********************************/
@@ -707,5 +779,4 @@ Item
         //! [timer]
         visible: true
     }
-
 }

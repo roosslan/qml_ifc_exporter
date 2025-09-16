@@ -83,7 +83,6 @@ int main (int argc, char* argv[])
         engine.load(url);
     */
     QQuickView view;
-
     view.setSource(QUrl::fromLocalFile("../main.qml"));
 
     QObject *item = view.rootObject();

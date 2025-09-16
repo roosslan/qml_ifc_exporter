@@ -34,6 +34,7 @@ HEADERS += \
 
 DISTFILES += \
     CustomBorderRect.qml \
+    JWDMDatePicker.qml \
     main.qml
 
 CONFIG += qmltypes
