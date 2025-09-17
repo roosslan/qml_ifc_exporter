@@ -53,7 +53,7 @@ public slots:
     void slotEscPressed();
     void slotStopClicked();
     void slotBtnIFCSettingsClicked();
-    void slotRunClicked(const QString &utime, const int rightNow);
+    void slotRunClicked(const int rightNow, const QString &utime, const QString &udate);
     void slotIsFileExists(QString fname, QString rvtVersion);
     QString ReadInfString(QString sectionName, QString keyName);
     void WriteInfString(QString sectionName, QString keyName, QString value);

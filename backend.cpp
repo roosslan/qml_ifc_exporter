@@ -206,7 +206,7 @@ void BackEnd::slotIsFileExists(QString fname, QString rvtVersion)
                               Q_ARG(QVariant, boolMsg));
 }
 
-void BackEnd::slotRunClicked(const QString &utime, const int rightNow)
+void BackEnd::slotRunClicked(const int rightNow, const QString &utime, const QString &udate)
 {
     DeleteInfSection("SourceDisksFiles");
 
@@ -247,7 +247,20 @@ void BackEnd::slotRunClicked(const QString &utime, const int rightNow)
         for (int i = 0; i < qmlListModel->rowCount(); ++i)
         {
             QString rvtFileName = qmlListModel->data(qmlListModel->index(i, 0), 0).toString();
-            WriteInfString("SourceDisksFiles", rvtFileName, "");
+
+            QVariant viewsVariant, sitesVariant;
+            QMetaObject::invokeMethod(m_item, "getArr3DViews",
+                                      Q_RETURN_ARG(QVariant, viewsVariant),
+                                      Q_ARG(QVariant, i));
+
+            QMetaObject::invokeMethod(m_item, "getArrSites",
+                                      Q_RETURN_ARG(QVariant, sitesVariant),
+                                      Q_ARG(QVariant, i));
+
+            QString selectedViews = viewsVariant.toString();
+            QString selectedSites = sitesVariant.toString();
+
+            WriteInfString("SourceDisksFiles", rvtFileName, selectedViews + "%" + selectedSites);
         }
     }
     else

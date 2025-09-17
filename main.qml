@@ -12,17 +12,54 @@ Item
     property real defaultSpacing: 10;
     property real topOffset: 10;
 
+    // Массивы для хранения индивидуальных значений вьюхи и площадки для каждого файла
+    property var arr3DViews: []
+    property var arrSites: []
+    property var selectedDate: new Date().toLocaleString(Qt.locale(),"dd.MM.yyyy");
+
     signal signalBtnIFCSettingsClicked();
     signal signalStopClicked();
-    signal signalRunClicked(utime: string, rightNow: int);
+    signal signalRunClicked(rightNow: int, utime: string, udate: string);
     signal escKeyPressedSignal();
-    signal dateSelected(udate: string);
+
     signal signalIsFileExists(fname: string, rvtVersion: string);
+
+    // Функция для установки значения 3D-вьюхи для файла по индексу
+    function setArr3DViews(index, view) {
+        while (arr3DViews.length <= index) {
+            arr3DViews.push("");
+        }
+        arr3DViews[index] = view;
+    }
+
+    // Функция для установки значения площадки для файла по индексу
+    function setArrSites(index, site) {
+        while (arrSites.length <= index) {
+            arrSites.push("");
+        }
+        arrSites[index] = site;
+    }
+
+    // Функция для получения значения view для файла по индексу
+    function getArr3DViews(index) {
+        if (index >= 0 && index < arr3DViews.length) {
+            return arr3DViews[index];
+        }
+        return "";
+    }
+
+    // Функция для получения значения площадки для файла по индексу
+    function getArrSites(index) {
+        if (index >= 0 && index < arrSites.length) {
+            return arrSites[index];
+        }
+        return "";
+    }
 
     Connections
     {
         target: datePicker;
-        onDatePicked: { console.log("Pressed"); }
+        onDatePicked: { console.log(selectedDate); }
     }
 
     id: mainWindow;
@@ -168,25 +205,91 @@ Item
             delegate:
             Column
             {
+                Row{
                 id: horizCol;
                 Text
                 {
                     id: rowText;
-                    x: 10;
                     text: path;
+                }                
+                Rectangle
+                {
+                    width: lvMain.width - rowText.width + 155;
+                    height: 20;
+                }
+                CheckBox3DViews
+                {
+                    id: cbExtract3D
+                    objectName: "cbExtract3D_" + index;
+                    ToolTip.text: "Указать 3D-виды и площадки";
+                    ToolTip.visible: hovered;
+                    height: 17;
+                    width: 17;
+                    checked: false;
+
+                    onClicked:{
+                        if (cbExtract3D.checked){
+                            rowAdditionalFields.visible = true;
+                        }
+                        else{
+                            rowAdditionalFields.visible = false;
+                            // Сбрасываем значения
+                            setArr3DViews(index, "");
+                            setArrSites(index, "");
+                            tfViewField.text = "";
+                            tfSiteField.text = "";
+                        }
+                    }
                 }
                 Image
                 {
                     source: "resources/trash.png";
-                    x: 765;
-                    width: 15;
-                    height: 15;
+                    //x: 765;
+                    width: 18;
+                    height: 18;
                     MouseArea
                     {
                         anchors.fill: parent;
                         onClicked: listModel.remove(index);
                     }
                 }
+}
+                Row {
+                    id: rowAdditionalFields
+                    y: 80;
+                    x: 80;
+                    spacing: 20;
+                    visible: cbExtract3D.checked;
+
+                    Text {
+                        text: "Введите 3D-виды"
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    TextField {
+                        id: tfViewField
+                        width: 100;
+                        text: getArr3DViews(index)
+                        onTextChanged: {
+                            setArr3DViews(index, text);
+                        }
+                    }
+
+                    Text {
+                        text: "Введите площадки"
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    TextField {
+                        id: tfSiteField
+                        width: 100;
+                        text: getArrSites(index)
+                        onTextChanged: {
+                            setArrSites(index, text);
+                        }
+                    }
+                }
+
             }
             model: ListModel
             {
@@ -277,7 +380,7 @@ Item
                         var selectedTime = new Date().toLocaleString(Qt.locale(),"hh:mm");
 
                         lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Запуск прямо сейчас (в " +  selectedTime + ")"});
-                        signalRunClicked(selectedTime, 1);   /* "1" - запустить прямо сейчас */
+                        signalRunClicked(1, selectedTime, new Date().toLocaleString(Qt.locale(),"dd.MM.yyyy"));   /* "1" - запустить прямо сейчас */
                         itemsEnabled = false;
                         btnStop.enabled = true;
                     }
@@ -291,7 +394,7 @@ Item
                         var selectedTime = uTime.getTime();
 
                         lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Назначенное время " +  selectedTime.hour.toString() + ":" + selectedTime.minute.toString()});
-                        signalRunClicked(selectedTime.hour.toString() + ":" + selectedTime.minute.toString(), 0);
+                        signalRunClicked(0, selectedTime.hour.toString() + ":" + selectedTime.minute.toString(), selectedDate);
                         itemsEnabled = false;
                         btnStop.enabled = true;
                     }
@@ -502,7 +605,7 @@ Item
             {
                 var options = { year: 'numeric', month: 'numeric', day: 'numeric' };
                 labelDate.text = udate.toLocaleDateString("ru-RU", options) + "   ";
-                dateSelected(udate.toLocaleDateString("ru-RU", options));
+                selectedDate = udate.toLocaleDateString("ru-RU", options);
             };
         }
 
