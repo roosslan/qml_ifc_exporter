@@ -29,7 +29,7 @@ Item {
                 GradientStop { position: 1.0; color: Qt.darker(palette.button, 1.3) }
             }
             */
-            height: label.implicitHeight * 1.5;
+            height: 18;
             width: height;
             anchors.margins: 1;
             radius: 3;
@@ -37,9 +37,9 @@ Item {
             border.color: Qt.darker(palette.button, 1.5);
             Image {
                 id: theX;
-                source: "images/3d.png";
+                source: "images/v3d.png";
                 anchors.fill: frame;
-                anchors.margins: frame.width / 5;
+                anchors.margins: frame.width / 10;
                 fillMode: Image.PreserveAspectFit;
                 smooth: true;
                 visible: root.checked;

@@ -215,24 +215,8 @@ Item
                 }                
                 Rectangle
                 {
-//                    width: lvMain.width - rowText.width + 155;
+                    width: lvMain.width - rowText.width + 155;
                     height: 20;
-                }
-
-
-                PlusButton
-                {
-                    text: "+"
-                    height: 15
-                    width: 15
-                    objectName: btnNum;
-                    onClicked: {
-                        btnNum++;
-                        loader.source = "shared/PlusButton.qml"; }
-                }
-
-                Loader {
-                    id: loader
                 }
 
                 CheckBox3DViews
@@ -259,10 +243,21 @@ Item
                         }
                     }
                 }
+                PlusButton
+                {
+                    text: ""
+                    enabled: false;
+                    palette: white;
+                    height: 18;
+                    width: 3;
+                    onClicked: {
+                        Qt.createComponent("PlusButton.qml").createObject(parent, { "ctrlNum": 666, "x": 10, "y": 25});
+                        Qt.createComponent("DynamicImage.qml").createObject(parent, {"x": 20, "y": 55});
+                    }
+                }
                 Image
                 {
                     source: "resources/trash.png";
-                    //x: 765;
                     width: 18;
                     height: 18;
                     MouseArea
@@ -277,7 +272,7 @@ Item
                     y: 80;
                     x: 80;
                     spacing: 20;
-                    visible: cbExtract3D.checked;
+                    visible: cbExtract3D.checked;                    
 
                     Text {
                         text: "Введите 3D-виды"

@@ -6,10 +6,12 @@ import QtQuick.Window
 import QtQuick.Controls
 
 Item {
-    id: container
+    property int ctrlNum;
+    property bool iAmLast: true;
+    objectName: rasso;
 
+    id: container
     property alias text: buttonLabel.text
-    property int objectName: objectName++;
     property alias label: buttonLabel
     signal clicked
     property alias containsMouse: hoverHandler.hovered
@@ -40,8 +42,10 @@ Item {
     TapHandler {
         id: tapHandler
         onTapped: {
-            console.log(objectName++);
-            Qt.createComponent("PlusButton.qml").createObject(parent, {"x": 20, "y": 0});
+            console.log(++ctrlNum);
+            var hPlusBtn = Qt.createComponent("PlusButton.qml").createObject(parent, { "ctrlNum": ctrlNum, "x": 10, "y": 25});
+            var DynImg = Qt.createComponent("DynamicImage.qml").createObject(parent, {"x": 20, "y": 55});
+            iAmNotLast = false;
         }
     }
 
@@ -55,4 +59,5 @@ Item {
         color: palette.buttonText
         anchors.centerIn: parent
     }
+
 }
