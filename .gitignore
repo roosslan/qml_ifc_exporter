@@ -11,7 +11,8 @@
 *.userprefs
 # Mono auto generated files
 mono_crash.*
-Build/
+Build/*
+!Build/shared
 windeploy/
 [Dd]ebug/
 [Dd]ebugPublic/

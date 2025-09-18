@@ -11,6 +11,7 @@ Item
     property bool fileExists: false;
     property real defaultSpacing: 10;
     property real topOffset: 10;
+    property int btnNum: 0;
 
     // Массивы для хранения индивидуальных значений вьюхи и площадки для каждого файла
     property var arr3DViews: []
@@ -214,9 +215,26 @@ Item
                 }                
                 Rectangle
                 {
-                    width: lvMain.width - rowText.width + 155;
+//                    width: lvMain.width - rowText.width + 155;
                     height: 20;
                 }
+
+
+                PlusButton
+                {
+                    text: "+"
+                    height: 15
+                    width: 15
+                    objectName: btnNum;
+                    onClicked: {
+                        btnNum++;
+                        loader.source = "shared/PlusButton.qml"; }
+                }
+
+                Loader {
+                    id: loader
+                }
+
                 CheckBox3DViews
                 {
                     id: cbExtract3D
@@ -579,6 +597,7 @@ Item
             RoundButton
             {
                 id: btnPickDate;
+                enabled: itemsEnabled;
                 anchors.bottom: parent.bottom;
                 anchors.bottomMargin: 0;
                 anchors.topMargin: 20;

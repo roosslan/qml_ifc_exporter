@@ -211,6 +211,7 @@ void BackEnd::slotRunClicked(const int rightNow, const QString &utime, const QSt
     DeleteInfSection("SourceDisksFiles");
 
     WriteInfString("ControlFlags", "Time", utime);
+    WriteInfString("ControlFlags", "Date", udate);
 
     QQuickItem* qcbRvtVers = m_item->findChild<QQuickItem*>("row_RvtVersion");
     QObject* cb_RvtVers = qcbRvtVers->children()[1];

@@ -1,6 +1,5 @@
 <RCC>
     <qresource prefix="/qt/qml/shared">
-        <file>Button.qml</file>
         <file>CheckBoxALDE.qml</file>
         <file>Images.qml</file>
         <file>LabelALDE.qml</file>
