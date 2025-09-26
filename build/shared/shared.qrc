@@ -9,6 +9,15 @@
         <file>TabSet.qml</file>
         <file>TextField.qml</file>
         <file>images/qt-logo.png</file>
-        <file>qmldir</file>
+        <file>CheckBox3DViews.qml</file>
+        <file>CustomBorderRect.qml</file>
+        <file>DynamicImage.qml</file>
+        <file>JWDMDatePicker.qml</file>
+        <file>UCard.qml</file>
+        <file>URect.qml</file>
+        <file>UTimeDialog.qml</file>
+        <file>UTimePicker.qml</file>
+        <file>UTumbler.qml</file>
+        <file>PlusButtonRow.qml</file>
     </qresource>
 </RCC>

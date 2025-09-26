@@ -30,7 +30,7 @@ int main (int argc, char* argv[])
     if( !shared.create( 512, QSharedMemory::ReadWrite) )
     {
         QLibrary qLib;
-        char win_NameWin[] = "BIMALDE - ExportTo", win_MessageWin[] = "Окно экспорта IFC уже запущено";
+        char win_NameWin[] = "BIMALDE - ExportTo", win_MessageWin[] = "IFC export window is already opened";
         int iResult = 0x00;
         bool unLoad = false;
 
@@ -42,7 +42,7 @@ int main (int argc, char* argv[])
                 pMessageBox MessageBoxA = (pMessageBox)qLib.resolve("MessageBoxA");
 
                 if(MessageBoxA)
-                    iResult = MessageBoxA(nullptr, &win_NameWin[0x00], &win_MessageWin[0x00], 0x40);
+                    iResult = MessageBoxA(nullptr, &win_MessageWin[0x00], &win_NameWin[0x00], 0x40);
 
                 MessageBoxA = nullptr;
                 unLoad = qLib.unload();
