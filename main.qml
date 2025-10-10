@@ -216,6 +216,7 @@ Rectangle
         Column
         {
           id: horizontalColumn;
+          objectName: "summaryDelegate";
           Row {
             id: horizontalRow;
             Text
@@ -242,7 +243,12 @@ Rectangle
                     idRowAdditionalFields = horizontalColumn;
                     if (cbExtract3D.checked)
                     {
-                        addSubRow(index, false);
+//                        addSubRow(index, false);
+                        console.log("clicked!");
+                        var component = Qt.createComponent("shared\\PlusButtonRow.qml")
+                        var subRow = component.createObject(idRowAdditionalFields, { "parentRef": mainWindow, "lvRowId" :  index, "subRowVisible": index, "componentName": component.objectName } )
+                        subRow.objectName = subRow.toString();
+                        rowsArray.push({strHWND: subRow.objectName, hwnd: subRow, lvRowIndx: index, componentName: component.objectName});
                     }
                     else{
                         removeSubRows(index);
@@ -283,6 +289,25 @@ Rectangle
             {
                 fileExists = remove;
             }
+        }
+        // Uses black magic to hunt for the delegate instance with the given
+        // index.  Returns undefined if there's no currently instantiated
+        // delegate with that index.
+        function getDelegateInstanceAt(index) {
+            for(var i = 0; i < contentItem.children.length; ++i) {
+                var item = contentItem.children[i];
+                // We have to check for the specific objectName we gave our
+                // delegates above, since we also get some items that are not
+                // our delegates here.
+                console.log(item.objectName);
+                if (item.objectName == "summaryDelegate" && i == index){
+                    //return item;
+                    var varRow = item.children[0].children[2];
+                    varRow.clicked();
+                    console.log("hurra");
+                }
+            }
+            return undefined;
         }
     }
 
@@ -335,7 +360,9 @@ Rectangle
         height: 45;
         onClicked:
         {
-            onClicked: menuLaunch.open();
+            console.log("roundRocket");
+            lvMain.getDelegateInstanceAt(0);
+            menuLaunch.open();
         }
 
         Menu

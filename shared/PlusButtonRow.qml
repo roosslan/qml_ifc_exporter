@@ -6,25 +6,20 @@ import QtQuick.Controls
 
 Row {
     id: rowItem;
-    x: 150;
+    x: 180;
     property var parentRef;
     property bool subRowVisible;
     property int lvRowId;
     property string componentName;
-/*
-    Text {
-        text: "Введите 3D-вид";
-        anchors.verticalCenter: parent.verticalCenter
-    }
-*/
+
     TextField {
         id: tfViewField;
-        width: 130;
-        text: getArr3DViews(index);
-        placeholderText: "Введите 3D-вид";
+        width: 180;
+//        text: getArr3DViews(index);
+        placeholderText: "Введите название 3D-вида";
 
         onTextChanged: {
-            setArr3DViews(index, text);
+//            setArr3DViews(index, text);
         }
 
 
@@ -51,20 +46,15 @@ Row {
         height: 1;
         width: 60;
     }
-/*
-    Text {
-        text: "Введите площадку"
-        anchors.verticalCenter: parent.verticalCenter
-    }
-*/
+
     TextField {
         id: tfSiteField;
-        width: 130;
-        text: getArrSites(index)
-        placeholderText: "Введите площадку";
+        width: 220;
+//        text: getArrSites(index)
+        placeholderText: "Введите наименование площадки";
 
         onTextChanged: {
-            setArrSites(index, text);
+//            setArrSites(index, text);
         }        
 
         background: Rectangle {
@@ -90,6 +80,7 @@ Row {
         onClicked:
         {
             rowItem.parentRef.addSubRow(parent.lvRowId, true);
+            console.log("Adding row to " + parent.lvRowId);
         }
     }
 
@@ -97,7 +88,7 @@ Row {
     {
         id: btnTrashCanImage;
         source: "shared/images/trash.png";
-        visible: parent.subRowVisible;    /* Первый - 0, поэтому его не видно */
+        visible: parent.subRowVisible;
         //x: 765;
         width: 18;
         height: 18;
