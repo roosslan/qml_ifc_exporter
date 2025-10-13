@@ -112,5 +112,15 @@ int main (int argc, char* argv[])
     view.setMaximumWidth(windowWidth);
     view.setMinimumWidth(windowWidth);
 
+    QVariant returnedValue;
+    QVariant msg = 0;
+    QMetaObject::invokeMethod(item, "addRowFromCpp",
+                                Q_RETURN_ARG(QVariant, returnedValue),
+                                Q_ARG(int, 0),
+                                Q_ARG(QString, "raq"));
+
+    auto ret = QMetaObject::invokeMethod(item, "addSubRowWrapper",
+                                         Q_RETURN_ARG(QVariant, returnedValue),
+                                         Q_ARG(int, 0));
     return qGUIApp.exec ();
 }

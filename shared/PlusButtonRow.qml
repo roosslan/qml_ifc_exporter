@@ -8,9 +8,10 @@ Row {
     id: rowItem;
     x: 180;
     property var parentRef;
-    property bool subRowVisible;
+    property bool trashcanVisible;
     property int lvRowId;
-    property string componentName;
+    property string _3dViewText;
+    property string siteText;
 
     TextField {
         id: tfViewField;
@@ -19,7 +20,7 @@ Row {
         placeholderText: "Введите название 3D-вида";
 
         onTextChanged: {
-//            setArr3DViews(index, text);
+            rowItem.parentRef.set3DViewName(parent.objectName, text);
         }
 
 
@@ -50,11 +51,11 @@ Row {
     TextField {
         id: tfSiteField;
         width: 220;
-//        text: getArrSites(index)
+        text: siteText;
         placeholderText: "Введите наименование площадки";
 
         onTextChanged: {
-//            setArrSites(index, text);
+            rowItem.parentRef.setSiteName(parent.objectName, text);
         }        
 
         background: Rectangle {
@@ -79,7 +80,7 @@ Row {
         width: 18;
         onClicked:
         {
-            rowItem.parentRef.addSubRow(parent.lvRowId, true);
+            rowItem.parentRef.addSubRowWrapper(parent.lvRowId);
             console.log("Adding row to " + parent.lvRowId);
         }
     }
@@ -88,7 +89,7 @@ Row {
     {
         id: btnTrashCanImage;
         source: "shared/images/trash.png";
-        visible: parent.subRowVisible;
+        visible: parent.trashcanVisible;
         //x: 765;
         width: 18;
         height: 18;
@@ -97,7 +98,7 @@ Row {
             anchors.fill: parent;
             onClicked:
             {
-                rowItem.parentRef.removeSubRow(parent.parent.componentName);
+                rowItem.parentRef.removeSubRow(parent.parent.objectName);
                 parent.parent.destroy();
             }
         }

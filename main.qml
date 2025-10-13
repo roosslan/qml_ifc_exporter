@@ -1,4 +1,3 @@
-
 import QtQuick
 import "shared/"
 import QtQuick.Dialogs
@@ -17,10 +16,11 @@ Keys.onEscapePressed: escKeyPressedSignal();
 
 property bool itemsEnabled: true;
 property bool fileExists: false;
+
 property int defaultSpacing: 10;
 property int topOffset: 10;
 property var idRowAdditionalFields;
-property var rowsArray: [{ strHWND: "", hwnd: QtObject, lvRowIndx: 0, componentName: ""}];
+property var rowsArray: [{ strHWND: "", hwnd: QtObject, lvRowIndx: 0, filePath: "", _3DViewName: "", siteName: ""}];
 
 property var selectedDate: new Date().toLocaleString(Qt.locale(),"dd.MM.yyyy");
 
@@ -37,12 +37,42 @@ Component.onCompleted:
     rowsArray.splice(0, 1);
 }
 
-function removeSubRow(componentName: string)
+function addSubRowWrapper(lvMainRowId: int){
+    lvMain.addSubRow(lvMainRowId);
+}
+
+function addRowFromCpp(lvMainRowId: int, text: string){
+    listModel.append({ "path": text });
+}
+
+function set3DViewName(objectName: string, text: string)
+{
+    for(var i = 0; i < rowsArray.length; i++)
+    {
+        if(rowsArray[i].hwnd.objectName == objectName)
+        {
+            rowsArray[i]._3DViewName = text;
+        }
+    }
+}
+
+function setSiteName(objectName: string, text: string)
+{
+    for(var i = 0; i < rowsArray.length; i++)
+    {
+        if(rowsArray[i].hwnd.objectName == objectName)
+        {
+            rowsArray[i].siteName = text;
+        }
+    }
+}
+
+function removeSubRow(objectName: string)
 {
     console.log(rowsArray.length);
     for(var i = 0; i < rowsArray.length; i++)
     {
-        if(rowsArray[i].componentName == componentName)
+        if(rowsArray[i].hwnd.objectName == objectName)
         {
             try{
                 rowsArray.splice(i, 1);
@@ -63,14 +93,6 @@ function removeSubRows(lvMainRowId: int)    /* Удаляем все подпо�
             }
             catch(error){}
     rowsArray = rowsArray.filter(function(a){return a.lvRowIndx !== lvMainRowId});
-}
-
-function addSubRow(lvMainRowId: int, trashCanVisible: bool)
-{
-    var component = Qt.createComponent("shared\\PlusButtonRow.qml")
-    var subRow = component.createObject(idRowAdditionalFields, { "parentRef": mainWindow, "lvRowId" :  lvMainRowId, "subRowVisible": trashCanVisible, "componentName": component.objectName } )
-    subRow.objectName = subRow.toString();
-    rowsArray.push({strHWND: subRow.objectName, hwnd: subRow, lvRowIndx: lvMainRowId, componentName: component.objectName});
 }
 
 Connections
@@ -133,6 +155,7 @@ Rectangle
 
     Image
     {
+        id: thePlusImage;
         source: "resources/plus.png";
         enabled: itemsEnabled;
         anchors.right: btnAddLocalProject.right;
@@ -238,19 +261,19 @@ Rectangle
                 height: 17;
                 width: 17;
                 checked: false;
-
+                property int trashcanVisible: 0;
                 onClicked:{
                     idRowAdditionalFields = horizontalColumn;
                     if (cbExtract3D.checked)
                     {
-//                        addSubRow(index, false);
-                        console.log("clicked!");
-                        var component = Qt.createComponent("shared\\PlusButtonRow.qml")
-                        var subRow = component.createObject(idRowAdditionalFields, { "parentRef": mainWindow, "lvRowId" :  index, "subRowVisible": index, "componentName": component.objectName } )
+                        var component = Qt.createComponent("shared\\PlusButtonRow.qml");
+                        var subRow = component.createObject(idRowAdditionalFields, { "parentRef": mainWindow, "lvRowId":  index, "trashcanVisible": trashcanVisible } );
                         subRow.objectName = subRow.toString();
-                        rowsArray.push({strHWND: subRow.objectName, hwnd: subRow, lvRowIndx: index, componentName: component.objectName});
+                        rowsArray.push({strHWND: subRow.objectName, hwnd: subRow, lvRowIndx: index, filePath: path, _3DViewName: "", siteName: ""});
+                        console.log("subRow added to rowsArray");
                     }
-                    else{
+                    else
+                    {
                         removeSubRows(index);
                     }
                 }
@@ -291,20 +314,26 @@ Rectangle
             }
         }
         // Uses black magic to hunt for the delegate instance with the given
-        // index.  Returns undefined if there's no currently instantiated
+        // index. Returns undefined if there's no currently instantiated
         // delegate with that index.
-        function getDelegateInstanceAt(index) {
-            for(var i = 0; i < contentItem.children.length; ++i) {
-                var item = contentItem.children[i];
+        function addSubRow(index){
+            var i = 0;
+            for(var x = 0; x < contentItem.children.length; ++x) {
+                var item = contentItem.children[x];
                 // We have to check for the specific objectName we gave our
                 // delegates above, since we also get some items that are not
                 // our delegates here.
-                console.log(item.objectName);
-                if (item.objectName == "summaryDelegate" && i == index){
-                    //return item;
-                    var varRow = item.children[0].children[2];
-                    varRow.clicked();
-                    console.log("hurra");
+                if (item.objectName == "summaryDelegate"){
+                    if(i == index){
+                        //return item;
+                        var cbExtract3D_0 = item.children[0].children[2];
+                        cbExtract3D_0.trashcanVisible = 1;
+                        cbExtract3D_0.clicked();
+                        cbExtract3D_0.trashcanVisible = 0;
+                        console.log("a subRow added");
+
+                    }
+                    ++i;
                 }
             }
             return undefined;
@@ -360,8 +389,6 @@ Rectangle
         height: 45;
         onClicked:
         {
-            console.log("roundRocket");
-            lvMain.getDelegateInstanceAt(0);
             menuLaunch.open();
         }
 
