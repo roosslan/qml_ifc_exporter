@@ -22,6 +22,7 @@
 #include <QAbstractListModel>
 #include <QtLogging>
 #include <QQuickStyle>
+#include <qcheckbox.h>
 
 int main (int argc, char* argv[])
 {
@@ -113,14 +114,47 @@ int main (int argc, char* argv[])
     view.setMinimumWidth(windowWidth);
 
     QVariant returnedValue;
-    QVariant msg = 0;
-    QMetaObject::invokeMethod(item, "addRowFromCpp",
+
+    QMetaObject::invokeMethod(item, "addRowWithSubRowsFromCpp",
                                 Q_RETURN_ARG(QVariant, returnedValue),
                                 Q_ARG(int, 0),
-                                Q_ARG(QString, "raq"));
+                                Q_ARG(QString, "raque0"));
 
-    auto ret = QMetaObject::invokeMethod(item, "addSubRowWrapper",
-                                         Q_RETURN_ARG(QVariant, returnedValue),
-                                         Q_ARG(int, 0));
+    QMetaObject::invokeMethod(item, "addRowWithSubRowsFromCpp",
+                              Q_RETURN_ARG(QVariant, returnedValue),
+                              Q_ARG(int, 1),
+                              Q_ARG(QString, "raque1"));
+
+    QMetaObject::invokeMethod(item, "addRowWithSubRowsFromCpp",
+                              Q_RETURN_ARG(QVariant, returnedValue),
+                              Q_ARG(int, 2),
+                              Q_ARG(QString, "raque2"));
+
+    QMetaObject::invokeMethod(item, "addRowWithSubRowsFromCpp",
+                              Q_RETURN_ARG(QVariant, returnedValue),
+                              Q_ARG(int, 3),
+                              Q_ARG(QString, "raque3"));
+
+    QMetaObject::invokeMethod(item, "addRowWithSubRowsFromCpp",
+                              Q_RETURN_ARG(QVariant, returnedValue),
+                              Q_ARG(int, 4),
+                              Q_ARG(QString, "raque4"));
+
+    QMetaObject::invokeMethod(item, "addRowWithSubRowsFromCpp",
+                              Q_RETURN_ARG(QVariant, returnedValue),
+                              Q_ARG(int, 5),
+                              Q_ARG(QString, "raque5"));
+
+    QMetaObject::invokeMethod(item, "addSubRowWrapper",
+                              Q_RETURN_ARG(QVariant, returnedValue),
+                              Q_ARG(int, 0));
+
+    QMetaObject::invokeMethod(item, "addSubRowWrapper",
+                              Q_RETURN_ARG(QVariant, returnedValue),
+                              Q_ARG(int, 1));
+
+    QMetaObject::invokeMethod(item, "addSubRowWrapper",
+                              Q_RETURN_ARG(QVariant, returnedValue),
+                              Q_ARG(int, 4));
     return qGUIApp.exec ();
 }

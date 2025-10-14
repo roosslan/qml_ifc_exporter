@@ -41,7 +41,28 @@ function addSubRowWrapper(lvMainRowId: int){
     lvMain.addSubRow(lvMainRowId);
 }
 
-function addRowFromCpp(lvMainRowId: int, text: string){
+function addRowWithSubRowsFromCpp(lvMainRowId: int, text: string)
+{
+    listModel.append({ "path": text });
+
+    /* invalidating DOM immediately */
+    lvMain.forceLayout();
+
+    /* child-элемент с индексом 1 предположительно 'reserved' */
+    if(lvMainRowId > 0)
+    {
+        ++lvMainRowId
+    }
+
+    var lvDOM = lvMain.contentItem;
+    var newlyCreatedItem = lvDOM.children[lvMainRowId].children[0].children[2];
+    newlyCreatedItem.checked = 1;
+    newlyCreatedItem.clicked();
+    console.log(rowsArray);
+}
+
+function addRowFromCpp(lvMainRowId: int, text: string)
+{
     listModel.append({ "path": text });
 }
 
@@ -69,7 +90,6 @@ function setSiteName(objectName: string, text: string)
 
 function removeSubRow(objectName: string)
 {
-    console.log(rowsArray.length);
     for(var i = 0; i < rowsArray.length; i++)
     {
         if(rowsArray[i].hwnd.objectName == objectName)
@@ -224,6 +244,17 @@ Rectangle
         }
     }
 
+    ScrollBar {
+        id: vBar;
+        active: true;
+        anchors {
+            right: lvMain.right;
+            top: lvMain.top;
+            bottom: lvMain.bottom;
+            rightMargin: -50;
+        }
+    }
+
     ListView
     {
         id: lvMain;
@@ -233,7 +264,10 @@ Rectangle
         anchors.margins: 10;
         anchors.left: parent.left;
         height: 500;
-        width: 600;
+        width: 750;
+        clip: true; /* Чтобы динамически создаваемы контролы не вылезали за пределы ListView */
+
+        ScrollBar.vertical: vBar;
 
         delegate:
         Column
@@ -247,9 +281,11 @@ Rectangle
                 id: rowText;
                 text: path;
             }
+
+            /* spacer между именем файла и чекбоксом "3D" */
             Rectangle
             {
-                width: lvMain.width - rowText.width + 155;
+                width: lvMain.width - rowText.width - 30;
                 height: 20;
             }
 
@@ -262,6 +298,9 @@ Rectangle
                 width: 17;
                 checked: false;
                 property int trashcanVisible: 0;
+                property string _3DViewText: "";
+                property string siteText: "";
+
                 onClicked:{
                     idRowAdditionalFields = horizontalColumn;
                     if (cbExtract3D.checked)
@@ -269,7 +308,7 @@ Rectangle
                         var component = Qt.createComponent("shared\\PlusButtonRow.qml");
                         var subRow = component.createObject(idRowAdditionalFields, { "parentRef": mainWindow, "lvRowId":  index, "trashcanVisible": trashcanVisible } );
                         subRow.objectName = subRow.toString();
-                        rowsArray.push({strHWND: subRow.objectName, hwnd: subRow, lvRowIndx: index, filePath: path, _3DViewName: "", siteName: ""});
+                        rowsArray.push({strHWND: subRow.objectName, hwnd: subRow, lvRowIndx: index, filePath: path, _3DViewName: _3DViewText, siteName: siteText});
                         console.log("subRow added to rowsArray");
                     }
                     else
@@ -389,6 +428,7 @@ Rectangle
         height: 45;
         onClicked:
         {
+            addRowWithSubRowsFromCpp(2, "sadsdafdf");
             menuLaunch.open();
         }
 
@@ -577,7 +617,7 @@ Rectangle
         onChanged:
         {
             var i = getTime()
-            // console.log(i.hour)
+
             // console.log(i.minute)
         }
     }
