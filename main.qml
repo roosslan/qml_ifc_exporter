@@ -28,8 +28,7 @@ signal signalBtnIFCSettingsClicked();
 signal signalStopClicked();
 signal signalRunClicked(rightNow: int, utime: string, udate: string);
 signal escKeyPressedSignal();
-signal signalSaveViewToFile(view_Name: string, isAppend: int);
-signal signalSaveSiteToFile(site_Name: string, isAppend: int);
+signal signalSaveViewAndSiteToFile(fileName: string, viewName: string, site_Name: string, isAppend: int);
 
 signal signalIsFileExists(fname: string, rvtVersion: string);
 
@@ -69,7 +68,7 @@ function addRowWithSubRowsFromCpp(lvMainRowId: int, filePath: string, _3dview_Te
     newlyCreatedItem.siteText = "";
 }
 
-function addRowFromCpp(lvMainRowId: int, text: string)
+function addRowFromCpp(text: string)
 {
     listModel.append({ "path": text });
 }
@@ -122,19 +121,11 @@ function removeSubRows(lvMainRowId: int)    /* Удаляем все подпо�
     rowsArray = rowsArray.filter(function(a){return a.lvRowIndx !== lvMainRowId});
 }
 
-function saveSitesAndViewsToFiles()
+function saveViewsAndSitesToFile()
 {
-    /* Пишем все вьюхи в отдельный файл строчками вида 'fname = viewname' */
-    for (var y = 0; y < rowsArray.length; ++y){
-        if (rowsArray[y]._3DViewName != ""){
-            signalSaveViewToFile(rowsArray[y].filePath + " = " + rowsArray[y]._3DViewName, y);
-        }
-    }
-    /* Пишем все площадки в отдельный файл строчками вида 'fname = viewname' */
-    for (var i = 0; i < rowsArray.length; ++i){
-        if (rowsArray[i].siteName != ""){
-            signalSaveSiteToFile(rowsArray[i].filePath + " = " + rowsArray[i].siteName, i);
-        }
+    /* Пишем все вьюхи/площадки в отдельный файл строчками вида 'filename = viewname = sitename' */
+    for (var x = 0; x < rowsArray.length; ++x){
+            signalSaveViewAndSiteToFile(rowsArray[x].filePath, rowsArray[x]._3DViewName, rowsArray[x].siteName, x);
     }
 }
 
@@ -471,7 +462,7 @@ Rectangle
                 onTriggered:
                 {
                     var selectedTime = new Date().toLocaleString(Qt.locale(),"hh:mm");
-                    saveSitesAndViewsToFiles();
+                    saveViewsAndSitesToFile();
                     lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Запуск прямо сейчас (в " +  selectedTime + ")"});
                     signalRunClicked(1, selectedTime, new Date().toLocaleString(Qt.locale(),"dd.MM.yyyy"));   /* "1" - запустить прямо сейчас */
                     itemsEnabled = false;
@@ -485,7 +476,7 @@ Rectangle
                 onTriggered:
                 {
                     var selectedTime = uTime.getTime();
-                    saveSitesAndViewsToFiles();
+                    saveViewsAndSitesToFile();
                     lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Назначенное время " + selectedDate + ", " + selectedTime.hour.toString() + ":" + selectedTime.minute.toString()});
                     signalRunClicked(0, selectedTime.hour.toString() + ":" + selectedTime.minute.toString(), selectedDate);
                     itemsEnabled = false;

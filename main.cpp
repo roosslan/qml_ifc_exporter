@@ -26,7 +26,6 @@
 
 int main (int argc, char* argv[])
 {
-    qputenv("QML_XHR_ALLOW_FILE_WRITE", QByteArray("1"));
     /* Разрешаем только один запуск окна экспорта */
     QSharedMemory shared("02d60619-bb94-4a94-88bb-b965590a7eaa");
     if( !shared.create( 512, QSharedMemory::ReadWrite) )
@@ -96,8 +95,7 @@ int main (int argc, char* argv[])
     QObject::connect(item, SIGNAL(signalStopClicked()), &backEndRula, SLOT(slotStopClicked()));
     QObject::connect(item, SIGNAL(signalRunClicked(int, QString, QString)), &backEndRula, SLOT(slotRunClicked(int, QString, QString)));
     QObject::connect(item, SIGNAL(signalIsFileExists(QString, QString)), &backEndRula, SLOT(slotIsFileExists(QString, QString)));
-    QObject::connect(item, SIGNAL(signalSaveViewToFile(QString, int)), &backEndRula, SLOT(slotSaveViewToFile(QString, int)));
-    QObject::connect(item, SIGNAL(signalSaveSiteToFile(QString, int)), &backEndRula, SLOT(slotSaveSiteToFile(QString, int)));
+    QObject::connect(item, SIGNAL(signalSaveViewAndSiteToFile(QString, QString, QString, int)), &backEndRula, SLOT(slotSaveViewAndSiteToFile(QString, QString, QString, int)));
 
     /* Чтобы пользователь был уверен, что путь с последнего сеанса сохранился: */
     QString exportDirectory = backEndRula.ReadInfString("DestinationDirs", "DefaultDestDir");
@@ -118,25 +116,58 @@ int main (int argc, char* argv[])
     view.setMaximumWidth(windowWidth);
     view.setMinimumWidth(windowWidth);
 
+    std::list<QString> vFilesList = backEndRula.GetAllKeysOfSection("SourceDisksFiles");
+//    std::multimap<QString, QString> mViewsMap = backEndRula.GetAllKeysAndValuesOfFile(backEndRula.viewsFile);
+    toRestore lineToRestore;
+    std::vector<toRestore> vViewsAndSites = backEndRula.GetAllKeysAndValuesOfFile(backEndRula.viewsAndSitesFile);
+/*
+    foreach (auto val, mViewsMap) {
+        lineToRestore.fname = val.first;
+        lineToRestore.view = val.second;
+        arrayToRestore.push_back(lineToRestore);
+        lineToRestore = {};
+    }
+
+    foreach (auto val, mSitesMap) {
+        lineToRestore.fname = val.first;
+        lineToRestore.site = val.second;
+        arrayToRestore.push_back(lineToRestore);
+        lineToRestore = {};
+    }
+*/
     QVariant returnedValue;
+
+    foreach (auto fName, vFilesList) {
+        /* Если файл есть в списке с вьюхами/площадками => пока ничего не делаем */
+         auto it = std::find(vViewsAndSites.begin(), vViewsAndSites.end(), fName);
+/*
+        if (backEndRula.vec_contains(fName, vViewsAndSites)){ // Если файл есть в списке с вьюхами/площадками => пока ничего не делаем  }
+        else {
+            // Добавляем в список обыкновенный файл, без вьюх\площадок
+            QMetaObject::invokeMethod(item, "addRowFromCpp",
+                                      Q_RETURN_ARG(QVariant, returnedValue),
+                                      Q_ARG(QString, fName));
+        }
+*/
+    }
 
     QMetaObject::invokeMethod(item, "addRowWithSubRowsFromCpp",
                                 Q_RETURN_ARG(QVariant, returnedValue),
                                 Q_ARG(int, 0),
                                 Q_ARG(QString, "C:/Root/Doc/rasa.rvt"),
-                                Q_ARG(QString, "thisIS_3dViewName"),
-                                Q_ARG(QString, "etoPloshadka"));
+                                Q_ARG(QString, "thisIS_3dViewName33"),
+                                Q_ARG(QString, "etoPloshadka33"));
 
     QMetaObject::invokeMethod(item, "addSubRowWrapper",
                               Q_RETURN_ARG(QVariant, returnedValue),
                               Q_ARG(int, 0),
                               Q_ARG(QString, ""),
-                              Q_ARG(QString, "Площадка"));
+                              Q_ARG(QString, "Площадка33"));
 
     QMetaObject::invokeMethod(item, "addSubRowWrapper",
                               Q_RETURN_ARG(QVariant, returnedValue),
                               Q_ARG(int, 0),
-                              Q_ARG(QString, "Вьюха"),
+                              Q_ARG(QString, "Вьюха33"),
                               Q_ARG(QString, ""));
 
     return qGUIApp.exec ();

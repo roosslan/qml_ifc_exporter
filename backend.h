@@ -14,6 +14,17 @@
 #include <qquickview.h>
 #include "simpleini.h"
 
+struct toRestore
+{
+    QString fname;
+    QString view;
+    QString site;
+
+    bool operator==(const toRestore& other) const {
+        return fname == other.fname;
+    }
+};
+
 class BackEnd : public QObject
 {
     Q_OBJECT
@@ -48,6 +59,7 @@ public:
     QString infFile = appData + "\\alabuga_dev\\bimalde.inf";
     QString viewsFile = appData + "\\alabuga_dev\\rvt_views.txt";
     QString sitesFile = appData + "\\alabuga_dev\\rvt_sites.txt";
+    QString viewsAndSitesFile = appData + "\\alabuga_dev\\views_sites.sav";
 
     /* Для DeleteInfSection */
     LPCWSTR infName = (const wchar_t*) infFile.utf16();
@@ -57,9 +69,11 @@ public slots:
     void slotBtnIFCSettingsClicked();
     void slotRunClicked(const int rightNow, const QString &utime, const QString &udate);
     void slotIsFileExists(QString fname, QString rvtVersion);
-    void slotSaveViewToFile(QString viewName, int appendMode);
-    void slotSaveSiteToFile(QString siteName, int appendMode);
+    bool vec_contains(QString fNameOfToRestoreStruct, std::vector<toRestore> whereToLook);
+    void slotSaveViewAndSiteToFile(QString fName, QString viewName, QString siteName, int appendMode);
     QString ReadInfString(QString sectionName, QString keyName);
+    std::list<QString> GetAllKeysOfSection(QString sectionName);
+    std::vector<toRestore> GetAllKeysAndValuesOfFile(QString fileName);
     void WriteInfString(QString sectionName, QString keyName, QString value);
     void DeleteInfSection(QString sectionName);
 };

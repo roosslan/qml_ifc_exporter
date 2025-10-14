@@ -171,26 +171,62 @@ QString BackEnd::ReadInfString(QString sectionName, QString keyName)
     return s_Ret;
 }
 
-void BackEnd::slotSaveViewToFile(QString viewName, int appendMode)
+/* Для загрузки всего содержимого секции [SourceDisksFiles] */
+std::list<QString> BackEnd::GetAllKeysOfSection(QString sectionName)
 {
-    QIODeviceBase::OpenModeFlag writeMode = QIODevice::WriteOnly;
-    if(appendMode) writeMode = QIODevice::Append;
-    QFile file(viewsFile);
-    if (file.open(writeMode)) {
-        QTextStream stream(&file);
-        stream << viewName << "\n";
-        file.close();
+    std::list<QString> rret;
+    configFile.SetUnicode();
+    CSimpleIniW::TNamesDepend keyList;
+    SI_Error rc = configFile.LoadFile(infFile.toStdString().c_str());
+
+    bool res = configFile.GetAllKeys(sectionName.toStdWString().c_str(), keyList);
+    foreach (auto key, keyList) {
+        rret.push_back(QString::fromWCharArray(key.pItem));
     }
+    return rret;
 }
 
-void BackEnd::slotSaveSiteToFile(QString siteName, int appendMode)
+bool BackEnd::vec_contains(QString fNameOfToRestoreStruct, std::vector<toRestore> whereToLook)
+{
+    auto iter = std::find_if(whereToLook.begin(), whereToLook.end(),
+                             [&](const toRestore& ts){return ts.fname == fNameOfToRestoreStruct;});
+    return iter != whereToLook.end();
+}
+
+/* Парсим в vec строки (вьюхи/площадки) вида C:/Для экспорта IFC/АР3_проект.rvt = 3dViewNavisworks = Площадка1 */
+std::vector<toRestore> BackEnd::GetAllKeysAndValuesOfFile(QString fileName)
+{
+    toRestore lineToRestore;
+    std::vector<toRestore> rret;
+
+    QFile file(fileName);
+    if(!file.open(QIODevice::ReadOnly)) {
+        qDebug() << file.errorString();
+    }
+
+    QTextStream in(&file);
+
+    while(!in.atEnd()) {
+        QString line = in.readLine();
+        QStringList fields = line.split("=");
+        lineToRestore.fname= fields.at(0);
+        lineToRestore.view = fields.at(1);
+        lineToRestore.site = fields.at(2);
+        rret.push_back(lineToRestore);
+        lineToRestore  = {};
+    }
+    file.close();
+    return rret;
+}
+
+void BackEnd::slotSaveViewAndSiteToFile(QString fName, QString viewName, QString siteName, int appendMode)
 {
     QIODeviceBase::OpenModeFlag writeMode = QIODevice::WriteOnly;
     if(appendMode) writeMode = QIODevice::Append;
-    QFile file(sitesFile);
+    QFile file(viewsAndSitesFile);
     if (file.open(writeMode)) {
         QTextStream stream(&file);
-        stream << siteName << "\n";
+        stream << fName << " = " << viewName << " = " << siteName << "\n";
         file.close();
     }
 }
