@@ -11,12 +11,12 @@ Row {
     property bool trashcanVisible;
     property int lvRowId;
     property string _3dViewText;
-    property string siteText;
+    property string siteNam;
 
     TextField {
         id: tfViewField;
         width: 180;
-//        text: getArr3DViews(index);
+        text: _3dViewText;
         placeholderText: "Введите название 3D-вида";
 
         onTextChanged: {
@@ -51,7 +51,7 @@ Row {
     TextField {
         id: tfSiteField;
         width: 220;
-        text: siteText;
+        text: siteNam;
         placeholderText: "Введите наименование площадки";
 
         onTextChanged: {
@@ -80,15 +80,16 @@ Row {
         width: 18;
         onClicked:
         {
-            rowItem.parentRef.addSubRowWrapper(parent.lvRowId);
-            console.log("Adding row to " + parent.lvRowId);
+            if(tfViewField.text == "" && tfSiteField.text == ""){}
+            else
+                rowItem.parentRef.addSubRowWrapper(parent.lvRowId, "", "");
         }
     }
 
     Image
     {
         id: btnTrashCanImage;
-        source: "shared/images/trash.png";
+        source: "resources/trash.png";
         visible: parent.trashcanVisible;
         //x: 765;
         width: 18;

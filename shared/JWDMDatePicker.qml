@@ -11,7 +11,7 @@ Rectangle
     property color backgroundColor: "white";
     property alias font: templateText.font;
 
-    signal datePicked(date d);
+    signal datePicked(string d);
 
     property int yearStart: new Date().getFullYear() - 150;
     property int yearRange: 300;
@@ -247,7 +247,7 @@ Rectangle
                                 onClicked:
                                 {
                                     currentDate = myDate;
-                                    var options = { year: 'numeric', month: 'numeric', day: 'numeric' };
+                                    var options = { day: 'numeric', month: 'numeric', year: 'numeric' };
                                     datePicked(currentDate.toLocaleDateString("ru-RU", options));
                                     theJWDMDatePicker.visible = false;
                                 }

@@ -21,13 +21,15 @@ property int defaultSpacing: 10;
 property int topOffset: 10;
 property var idRowAdditionalFields;
 property var rowsArray: [{ strHWND: "", hwnd: QtObject, lvRowIndx: 0, filePath: "", _3DViewName: "", siteName: ""}];
-
-property var selectedDate: new Date().toLocaleString(Qt.locale(),"dd.MM.yyyy");
+property string home_directory: "";
+property string selectedDate: new Date().toLocaleString(Qt.locale(),"dd.MM.yyyy");
 
 signal signalBtnIFCSettingsClicked();
 signal signalStopClicked();
 signal signalRunClicked(rightNow: int, utime: string, udate: string);
 signal escKeyPressedSignal();
+signal signalSaveViewToFile(view_Name: string, isAppend: int);
+signal signalSaveSiteToFile(site_Name: string, isAppend: int);
 
 signal signalIsFileExists(fname: string, rvtVersion: string);
 
@@ -37,13 +39,13 @@ Component.onCompleted:
     rowsArray.splice(0, 1);
 }
 
-function addSubRowWrapper(lvMainRowId: int){
-    lvMain.addSubRow(lvMainRowId);
+function addSubRowWrapper(lvMainRowId: int, _3dview_Text: string, site_Text: string){
+    lvMain.addSubRow(lvMainRowId, _3dview_Text, site_Text);
 }
 
-function addRowWithSubRowsFromCpp(lvMainRowId: int, text: string)
+function addRowWithSubRowsFromCpp(lvMainRowId: int, filePath: string, _3dview_Text: string, site_Text: string)
 {
-    listModel.append({ "path": text });
+    listModel.append({ "path": filePath });
 
     /* invalidating DOM immediately */
     lvMain.forceLayout();
@@ -56,9 +58,15 @@ function addRowWithSubRowsFromCpp(lvMainRowId: int, text: string)
 
     var lvDOM = lvMain.contentItem;
     var newlyCreatedItem = lvDOM.children[lvMainRowId].children[0].children[2];
+
+    newlyCreatedItem._3DViewText = _3dview_Text;
+    newlyCreatedItem.siteText = site_Text;
     newlyCreatedItem.checked = 1;
     newlyCreatedItem.clicked();
-    console.log(rowsArray);
+
+    /* Чистим, т.к. иначе текст запоминается в properties контрола и потом дублируется */
+    newlyCreatedItem._3DViewText = "";
+    newlyCreatedItem.siteText = "";
 }
 
 function addRowFromCpp(lvMainRowId: int, text: string)
@@ -101,7 +109,6 @@ function removeSubRow(objectName: string)
             catch(error){}
         }
     }
-    console.log(rowsArray.length);
 }
 
 function removeSubRows(lvMainRowId: int)    /* Удаляем все подпозиции, если галочку "3D" сняли */
@@ -115,10 +122,28 @@ function removeSubRows(lvMainRowId: int)    /* Удаляем все подпо�
     rowsArray = rowsArray.filter(function(a){return a.lvRowIndx !== lvMainRowId});
 }
 
+function saveSitesAndViewsToFiles()
+{
+    /* Пишем все вьюхи в отдельный файл строчками вида 'fname = viewname' */
+    for (var y = 0; y < rowsArray.length; ++y){
+        if (rowsArray[y]._3DViewName != ""){
+            signalSaveViewToFile(rowsArray[y].filePath + " = " + rowsArray[y]._3DViewName, y);
+        }
+    }
+    /* Пишем все площадки в отдельный файл строчками вида 'fname = viewname' */
+    for (var i = 0; i < rowsArray.length; ++i){
+        if (rowsArray[i].siteName != ""){
+            signalSaveSiteToFile(rowsArray[i].filePath + " = " + rowsArray[i].siteName, i);
+        }
+    }
+}
+
 Connections
 {
     target: datePicker;
-    onDatePicked: { console.log(selectedDate); }
+    onDatePicked: {
+        console.log(selectedDate);
+    }
 }
 
 MouseArea
@@ -169,7 +194,7 @@ Rectangle
         {
             id: rsnEditBox;
             width: btnAddLocalProject.width-50;
-            text: "RSN://ALD-SRV-B01/Projects/";
+            text: "RSN://ALD-SRV-REVITSER/Projects/"
         }
     }
 
@@ -190,8 +215,9 @@ Rectangle
                signalIsFileExists(rsnEditBox.text, cbVersion.currentText);
                if (fileExists)
                {
-                    if ( rsnEditBox.text !== "")
+                    if ( rsnEditBox.text !== ""){
                         listModel.append({ "path": rsnEditBox.text });
+                    }
                     rsnEditBox.text = "";
                }
             }
@@ -251,7 +277,7 @@ Rectangle
             right: lvMain.right;
             top: lvMain.top;
             bottom: lvMain.bottom;
-            rightMargin: -50;
+            rightMargin: -18;
         }
     }
 
@@ -264,7 +290,7 @@ Rectangle
         anchors.margins: 10;
         anchors.left: parent.left;
         height: 500;
-        width: 750;
+        width: 780;
         clip: true; /* Чтобы динамически создаваемы контролы не вылезали за пределы ListView */
 
         ScrollBar.vertical: vBar;
@@ -285,7 +311,7 @@ Rectangle
             /* spacer между именем файла и чекбоксом "3D" */
             Rectangle
             {
-                width: lvMain.width - rowText.width - 30;
+                width: lvMain.width - rowText.width - 35;
                 height: 20;
             }
 
@@ -306,10 +332,9 @@ Rectangle
                     if (cbExtract3D.checked)
                     {
                         var component = Qt.createComponent("shared\\PlusButtonRow.qml");
-                        var subRow = component.createObject(idRowAdditionalFields, { "parentRef": mainWindow, "lvRowId":  index, "trashcanVisible": trashcanVisible } );
+                        var subRow = component.createObject(idRowAdditionalFields, { "parentRef": mainWindow, "lvRowId":  index, "trashcanVisible": trashcanVisible, "_3dViewText": _3DViewText, "siteNam": siteText } );
                         subRow.objectName = subRow.toString();
                         rowsArray.push({strHWND: subRow.objectName, hwnd: subRow, lvRowIndx: index, filePath: path, _3DViewName: _3DViewText, siteName: siteText});
-                        console.log("subRow added to rowsArray");
                     }
                     else
                     {
@@ -355,7 +380,7 @@ Rectangle
         // Uses black magic to hunt for the delegate instance with the given
         // index. Returns undefined if there's no currently instantiated
         // delegate with that index.
-        function addSubRow(index){
+        function addSubRow(index: int, _3dview_Text: string, site_Text: string){
             var i = 0;
             for(var x = 0; x < contentItem.children.length; ++x) {
                 var item = contentItem.children[x];
@@ -366,11 +391,15 @@ Rectangle
                     if(i == index){
                         //return item;
                         var cbExtract3D_0 = item.children[0].children[2];
+                        cbExtract3D_0._3DViewText = _3dview_Text;
+                        cbExtract3D_0.siteText = site_Text;
                         cbExtract3D_0.trashcanVisible = 1;
                         cbExtract3D_0.clicked();
                         cbExtract3D_0.trashcanVisible = 0;
-                        console.log("a subRow added");
 
+                        /* Чистим, т.к. иначе текст запоминается в properties контрола и потом дублируется */
+                        cbExtract3D_0._3DViewText = "";
+                        cbExtract3D_0.siteText = "";
                     }
                     ++i;
                 }
@@ -428,7 +457,6 @@ Rectangle
         height: 45;
         onClicked:
         {
-            addRowWithSubRowsFromCpp(2, "sadsdafdf");
             menuLaunch.open();
         }
 
@@ -443,7 +471,7 @@ Rectangle
                 onTriggered:
                 {
                     var selectedTime = new Date().toLocaleString(Qt.locale(),"hh:mm");
-
+                    saveSitesAndViewsToFiles();
                     lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Запуск прямо сейчас (в " +  selectedTime + ")"});
                     signalRunClicked(1, selectedTime, new Date().toLocaleString(Qt.locale(),"dd.MM.yyyy"));   /* "1" - запустить прямо сейчас */
                     itemsEnabled = false;
@@ -457,8 +485,8 @@ Rectangle
                 onTriggered:
                 {
                     var selectedTime = uTime.getTime();
-
-                    lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Назначенное время " +  selectedTime.hour.toString() + ":" + selectedTime.minute.toString()});
+                    saveSitesAndViewsToFiles();
+                    lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Назначенное время " + selectedDate + ", " + selectedTime.hour.toString() + ":" + selectedTime.minute.toString()});
                     signalRunClicked(0, selectedTime.hour.toString() + ":" + selectedTime.minute.toString(), selectedDate);
                     itemsEnabled = false;
                     btnStop.enabled = true;
@@ -644,9 +672,11 @@ Rectangle
         RoundButton
         {
             id: btnPickDate;
+            x: 140
             enabled: itemsEnabled;
             anchors.bottom: parent.bottom;
             anchors.bottomMargin: 0;
+            spacing: 6
             anchors.topMargin: 20;
             width: 14;
             height: 14;
@@ -669,9 +699,9 @@ Rectangle
         height: 300;
         onDatePicked: (udate) =>
         {
-            var options = { year: 'numeric', month: 'numeric', day: 'numeric' };
-            labelDate.text = udate.toLocaleDateString("ru-RU", options) + "   ";
-            selectedDate = udate.toLocaleDateString("ru-RU", options);
+            var options = { day: 'numeric', month: 'numeric', year: 'numeric' };
+            labelDate.text = udate;
+            selectedDate = udate;
         };
     }
 
@@ -925,7 +955,7 @@ property var splashWindow: Window
     Image
     {
         id: splashImage
-        source: Images.qtLogo
+        source: "shared/images/qt-logo.png";
         TapHandler
         {
             onTapped: splash.exit()

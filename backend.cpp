@@ -171,6 +171,30 @@ QString BackEnd::ReadInfString(QString sectionName, QString keyName)
     return s_Ret;
 }
 
+void BackEnd::slotSaveViewToFile(QString viewName, int appendMode)
+{
+    QIODeviceBase::OpenModeFlag writeMode = QIODevice::WriteOnly;
+    if(appendMode) writeMode = QIODevice::Append;
+    QFile file(viewsFile);
+    if (file.open(writeMode)) {
+        QTextStream stream(&file);
+        stream << viewName << "\n";
+        file.close();
+    }
+}
+
+void BackEnd::slotSaveSiteToFile(QString siteName, int appendMode)
+{
+    QIODeviceBase::OpenModeFlag writeMode = QIODevice::WriteOnly;
+    if(appendMode) writeMode = QIODevice::Append;
+    QFile file(sitesFile);
+    if (file.open(writeMode)) {
+        QTextStream stream(&file);
+        stream << siteName << "\n";
+        file.close();
+    }
+}
+
 void BackEnd::slotIsFileExists(QString fname, QString rvtVersion)
 {
     QStringList args;
@@ -248,20 +272,7 @@ void BackEnd::slotRunClicked(const int rightNow, const QString &utime, const QSt
         for (int i = 0; i < qmlListModel->rowCount(); ++i)
         {
             QString rvtFileName = qmlListModel->data(qmlListModel->index(i, 0), 0).toString();
-
-            QVariant viewsVariant, sitesVariant;
-            QMetaObject::invokeMethod(m_item, "getArr3DViews",
-                                      Q_RETURN_ARG(QVariant, viewsVariant),
-                                      Q_ARG(QVariant, i));
-
-            QMetaObject::invokeMethod(m_item, "getArrSites",
-                                      Q_RETURN_ARG(QVariant, sitesVariant),
-                                      Q_ARG(QVariant, i));
-
-            QString selectedViews = viewsVariant.toString();
-            QString selectedSites = sitesVariant.toString();
-
-            WriteInfString("SourceDisksFiles", rvtFileName, selectedViews + "%" + selectedSites);
+            WriteInfString("SourceDisksFiles", rvtFileName, "");
         }
     }
     else
@@ -321,3 +332,6 @@ void bgMessageHandler(QtMsgType type, const QMessageLogContext &, const QString 
         ts << QTime::currentTime().toString() << " " << txt << Qt::endl;
     }
 }
+
+
+

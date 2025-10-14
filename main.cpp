@@ -26,6 +26,7 @@
 
 int main (int argc, char* argv[])
 {
+    qputenv("QML_XHR_ALLOW_FILE_WRITE", QByteArray("1"));
     /* Разрешаем только один запуск окна экспорта */
     QSharedMemory shared("02d60619-bb94-4a94-88bb-b965590a7eaa");
     if( !shared.create( 512, QSharedMemory::ReadWrite) )
@@ -95,12 +96,16 @@ int main (int argc, char* argv[])
     QObject::connect(item, SIGNAL(signalStopClicked()), &backEndRula, SLOT(slotStopClicked()));
     QObject::connect(item, SIGNAL(signalRunClicked(int, QString, QString)), &backEndRula, SLOT(slotRunClicked(int, QString, QString)));
     QObject::connect(item, SIGNAL(signalIsFileExists(QString, QString)), &backEndRula, SLOT(slotIsFileExists(QString, QString)));
+    QObject::connect(item, SIGNAL(signalSaveViewToFile(QString, int)), &backEndRula, SLOT(slotSaveViewToFile(QString, int)));
+    QObject::connect(item, SIGNAL(signalSaveSiteToFile(QString, int)), &backEndRula, SLOT(slotSaveSiteToFile(QString, int)));
 
     /* Чтобы пользователь был уверен, что путь с последнего сеанса сохранился: */
     QString exportDirectory = backEndRula.ReadInfString("DestinationDirs", "DefaultDestDir");
     QQuickItem* QQuickText_IFCPath = item->findChild<QQuickItem*>("text_IFCPath");
     QQuickText_IFCPath->setProperty("text", exportDirectory);
 
+   /* Следующий код передает в QML системные переменные наподобие APPDATA */
+    item->setProperty("home_directory", QDir::homePath());
 
     view.setIcon(QIcon("resources/ico.ico"));
 
@@ -118,43 +123,21 @@ int main (int argc, char* argv[])
     QMetaObject::invokeMethod(item, "addRowWithSubRowsFromCpp",
                                 Q_RETURN_ARG(QVariant, returnedValue),
                                 Q_ARG(int, 0),
-                                Q_ARG(QString, "raque0"));
-
-    QMetaObject::invokeMethod(item, "addRowWithSubRowsFromCpp",
-                              Q_RETURN_ARG(QVariant, returnedValue),
-                              Q_ARG(int, 1),
-                              Q_ARG(QString, "raque1"));
-
-    QMetaObject::invokeMethod(item, "addRowWithSubRowsFromCpp",
-                              Q_RETURN_ARG(QVariant, returnedValue),
-                              Q_ARG(int, 2),
-                              Q_ARG(QString, "raque2"));
-
-    QMetaObject::invokeMethod(item, "addRowWithSubRowsFromCpp",
-                              Q_RETURN_ARG(QVariant, returnedValue),
-                              Q_ARG(int, 3),
-                              Q_ARG(QString, "raque3"));
-
-    QMetaObject::invokeMethod(item, "addRowWithSubRowsFromCpp",
-                              Q_RETURN_ARG(QVariant, returnedValue),
-                              Q_ARG(int, 4),
-                              Q_ARG(QString, "raque4"));
-
-    QMetaObject::invokeMethod(item, "addRowWithSubRowsFromCpp",
-                              Q_RETURN_ARG(QVariant, returnedValue),
-                              Q_ARG(int, 5),
-                              Q_ARG(QString, "raque5"));
+                                Q_ARG(QString, "C:/Root/Doc/rasa.rvt"),
+                                Q_ARG(QString, "thisIS_3dViewName"),
+                                Q_ARG(QString, "etoPloshadka"));
 
     QMetaObject::invokeMethod(item, "addSubRowWrapper",
                               Q_RETURN_ARG(QVariant, returnedValue),
-                              Q_ARG(int, 0));
+                              Q_ARG(int, 0),
+                              Q_ARG(QString, ""),
+                              Q_ARG(QString, "Площадка"));
 
     QMetaObject::invokeMethod(item, "addSubRowWrapper",
                               Q_RETURN_ARG(QVariant, returnedValue),
-                              Q_ARG(int, 1));
+                              Q_ARG(int, 0),
+                              Q_ARG(QString, "Вьюха"),
+                              Q_ARG(QString, ""));
 
-    QMetaObject::invokeMethod(item, "addSubRowWrapper",
-                              Q_RETURN_ARG(QVariant, returnedValue),
-                              Q_ARG(int, 4));
     return qGUIApp.exec ();
 }

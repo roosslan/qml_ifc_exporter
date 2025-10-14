@@ -46,6 +46,8 @@ public:
     BackEnd(QGuiApplication *parent, QObject* item, HWND hWnd);
     ~BackEnd();
     QString infFile = appData + "\\alabuga_dev\\bimalde.inf";
+    QString viewsFile = appData + "\\alabuga_dev\\rvt_views.txt";
+    QString sitesFile = appData + "\\alabuga_dev\\rvt_sites.txt";
 
     /* Для DeleteInfSection */
     LPCWSTR infName = (const wchar_t*) infFile.utf16();
@@ -55,6 +57,8 @@ public slots:
     void slotBtnIFCSettingsClicked();
     void slotRunClicked(const int rightNow, const QString &utime, const QString &udate);
     void slotIsFileExists(QString fname, QString rvtVersion);
+    void slotSaveViewToFile(QString viewName, int appendMode);
+    void slotSaveSiteToFile(QString siteName, int appendMode);
     QString ReadInfString(QString sectionName, QString keyName);
     void WriteInfString(QString sectionName, QString keyName, QString value);
     void DeleteInfSection(QString sectionName);
@@ -63,3 +67,4 @@ public slots:
 void bgMessageHandler(QtMsgType type, const QMessageLogContext &, const QString & msg);
 
 #endif // BACKEND_H
+
