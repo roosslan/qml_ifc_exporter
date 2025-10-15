@@ -56,16 +56,29 @@ function addRowWithSubRowsFromCpp(lvMainRowId: int, filePath: string, _3dview_Te
     }
 
     var lvDOM = lvMain.contentItem;
-    var newlyCreatedItem = lvDOM.children[lvMainRowId].children[0].children[2];
 
-    newlyCreatedItem._3DViewText = _3dview_Text;
-    newlyCreatedItem.siteText = site_Text;
-    newlyCreatedItem.checked = 1;
-    newlyCreatedItem.clicked();
+    for(var x = 0; x < lvDOM.children.length; ++x) {
+        var firstChild = lvDOM.children[x];
+        if (firstChild.children.length > 0){
+            var secondChild = firstChild.children[0];
+            if (secondChild.children.length > 1){
+                var thirdChild = secondChild.children[2]; /* Наш пациент! */
+                if (thirdChild.objectName == "cbExtract3D_" + lvMainRowId){
 
-    /* Чистим, т.к. иначе текст запоминается в properties контрола и потом дублируется */
-    newlyCreatedItem._3DViewText = "";
-    newlyCreatedItem.siteText = "";
+                    /* var newlyCreatedItem = lvDOM.children[lvMainRowId].children[0].children[2]; */
+                    var newlyCreatedItem = thirdChild;
+                    newlyCreatedItem._3DViewText = _3dview_Text;
+                    newlyCreatedItem.siteText = site_Text;
+                    newlyCreatedItem.checked = 1;
+                    newlyCreatedItem.clicked();
+
+                    /* Чистим, т.к. иначе текст запоминается в properties контрола и потом дублируется */
+                    newlyCreatedItem._3DViewText = "";
+                    newlyCreatedItem.siteText = "";
+                }
+            }
+        }
+    }
 }
 
 function addRowFromCpp(text: string)
@@ -635,9 +648,7 @@ Rectangle
         size: Qt.size(0, 40);
         onChanged:
         {
-            var i = getTime()
-
-            // console.log(i.minute)
+            var i = getTime();
         }
     }
 

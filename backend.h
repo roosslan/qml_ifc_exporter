@@ -9,20 +9,18 @@
 #include <QTcpSocket>
 #include <QTcpServer>
 #include <QMetaType>
-#include <QSet>
+#include <QMessageBox>
 #include <QStandardPaths>
 #include <qquickview.h>
+#include <qlibrary.h>
 #include "simpleini.h"
+#include <QtQuick>
 
 struct toRestore
 {
     QString fname;
     QString view;
     QString site;
-
-    bool operator==(const toRestore& other) const {
-        return fname == other.fname;
-    }
 };
 
 class BackEnd : public QObject
@@ -69,7 +67,6 @@ public slots:
     void slotBtnIFCSettingsClicked();
     void slotRunClicked(const int rightNow, const QString &utime, const QString &udate);
     void slotIsFileExists(QString fname, QString rvtVersion);
-    bool vec_contains(QString fNameOfToRestoreStruct, std::vector<toRestore> whereToLook);
     void slotSaveViewAndSiteToFile(QString fName, QString viewName, QString siteName, int appendMode);
     QString ReadInfString(QString sectionName, QString keyName);
     std::list<QString> GetAllKeysOfSection(QString sectionName);
@@ -79,6 +76,22 @@ public slots:
 };
 
 void bgMessageHandler(QtMsgType type, const QMessageLogContext &, const QString & msg);
+
+template<class T> T& unmove(T&& t) { return static_cast<T&>(t); }
+
+class exportQuickView : public QQuickView
+{
+    Q_OBJECT
+public:
+    explicit exportQuickView(QWindow *parent = nullptr) : QQuickView(parent) {}
+
+protected:
+    void closeEvent(QCloseEvent *event) override
+    {
+        QMetaObject::invokeMethod(rootObject(), "saveViewsAndSitesToFile");
+        event->accept();
+    }
+};
 
 #endif // BACKEND_H
 

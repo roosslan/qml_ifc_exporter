@@ -181,16 +181,9 @@ std::list<QString> BackEnd::GetAllKeysOfSection(QString sectionName)
 
     bool res = configFile.GetAllKeys(sectionName.toStdWString().c_str(), keyList);
     foreach (auto key, keyList) {
-        rret.push_back(QString::fromWCharArray(key.pItem));
+        rret.push_back(QString::fromWCharArray(key.pItem).trimmed());
     }
     return rret;
-}
-
-bool BackEnd::vec_contains(QString fNameOfToRestoreStruct, std::vector<toRestore> whereToLook)
-{
-    auto iter = std::find_if(whereToLook.begin(), whereToLook.end(),
-                             [&](const toRestore& ts){return ts.fname == fNameOfToRestoreStruct;});
-    return iter != whereToLook.end();
 }
 
 /* Парсим в vec строки (вьюхи/площадки) вида C:/Для экспорта IFC/АР3_проект.rvt = 3dViewNavisworks = Площадка1 */
@@ -209,9 +202,9 @@ std::vector<toRestore> BackEnd::GetAllKeysAndValuesOfFile(QString fileName)
     while(!in.atEnd()) {
         QString line = in.readLine();
         QStringList fields = line.split("=");
-        lineToRestore.fname= fields.at(0);
-        lineToRestore.view = fields.at(1);
-        lineToRestore.site = fields.at(2);
+        lineToRestore.fname = fields.at(0).trimmed();
+        lineToRestore.view = fields.at(1).trimmed();
+        lineToRestore.site = fields.at(2).trimmed();
         rret.push_back(lineToRestore);
         lineToRestore  = {};
     }

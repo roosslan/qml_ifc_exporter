@@ -21,7 +21,7 @@
 #include <QtQml>
 #include <QAbstractListModel>
 #include <QtLogging>
-#include <QQuickStyle>
+
 #include <qcheckbox.h>
 
 int main (int argc, char* argv[])
@@ -77,13 +77,8 @@ int main (int argc, char* argv[])
 
             }, Qt::QueuedConnection);
 
-    /*  engine.clearComponentCache();       //unload all QML
-        engine.exit(0);                     //destroy any existing QQmlEngine instance(s)
-        qmlClearTypeRegistrations();        //call qmlClearTypeRegistrations()
-        QQuickStyle::setStyle("Material");
-        engine.load(url);
-    */
-    QQuickView view;
+    exportQuickView view;
+
     view.setSource(QUrl::fromLocalFile("../main.qml"));
 
     QObject *item = view.rootObject();
@@ -117,58 +112,56 @@ int main (int argc, char* argv[])
     view.setMinimumWidth(windowWidth);
 
     std::list<QString> vFilesList = backEndRula.GetAllKeysOfSection("SourceDisksFiles");
-//    std::multimap<QString, QString> mViewsMap = backEndRula.GetAllKeysAndValuesOfFile(backEndRula.viewsFile);
     toRestore lineToRestore;
     std::vector<toRestore> vViewsAndSites = backEndRula.GetAllKeysAndValuesOfFile(backEndRula.viewsAndSitesFile);
-/*
-    foreach (auto val, mViewsMap) {
-        lineToRestore.fname = val.first;
-        lineToRestore.view = val.second;
-        arrayToRestore.push_back(lineToRestore);
-        lineToRestore = {};
-    }
 
-    foreach (auto val, mSitesMap) {
-        lineToRestore.fname = val.first;
-        lineToRestore.site = val.second;
-        arrayToRestore.push_back(lineToRestore);
-        lineToRestore = {};
-    }
-*/
+    int listIndexToAdd = -1;
     QVariant returnedValue;
 
-    foreach (auto fName, vFilesList) {
-        /* Если файл есть в списке с вьюхами/площадками => пока ничего не делаем */
-         auto it = std::find(vViewsAndSites.begin(), vViewsAndSites.end(), fName);
-/*
-        if (backEndRula.vec_contains(fName, vViewsAndSites)){ // Если файл есть в списке с вьюхами/площадками => пока ничего не делаем  }
-        else {
-            // Добавляем в список обыкновенный файл, без вьюх\площадок
+    foreach (QString fName, vFilesList) {
+         /* Добавляем в список обыкновенные RVT, без вьюх и площадок */
+        auto it = std::find_if(vViewsAndSites.begin(), vViewsAndSites.end(),
+                     [&fName](const toRestore& item) {
+                         return item.fname == fName;
+            });
+        if(it == vViewsAndSites.end())
+        {
             QMetaObject::invokeMethod(item, "addRowFromCpp",
-                                      Q_RETURN_ARG(QVariant, returnedValue),
-                                      Q_ARG(QString, fName));
-        }
-*/
+                                        Q_RETURN_ARG(QVariant, returnedValue),
+                                        Q_ARG(QString, fName));
+            ++listIndexToAdd;
+         }
     }
 
+    QString lastAdded_fName = "";
+    /* Добавляем в список всё остальное, эти файлы уже с указанными вьюхами или площадками */
+    foreach (const auto lineToRestore, vViewsAndSites)
+    {
+        if(lastAdded_fName == lineToRestore.fname)
+            QMetaObject::invokeMethod(item, "addSubRowWrapper",
+                                        Q_RETURN_ARG(QVariant, returnedValue),
+                                        Q_ARG(int, listIndexToAdd),
+                                        Q_ARG(QString, lineToRestore.view),
+                                        Q_ARG(QString, lineToRestore.site));
+        else
+        {
+            QMetaObject::invokeMethod(item, "addRowWithSubRowsFromCpp",
+                                        Q_RETURN_ARG(QVariant, returnedValue),
+                                        Q_ARG(int, listIndexToAdd),
+                                        Q_ARG(QString, lineToRestore.fname),
+                                        Q_ARG(QString, lineToRestore.view),
+                                        Q_ARG(QString, lineToRestore.site));
+            ++listIndexToAdd;
+        }
+        lastAdded_fName = lineToRestore.fname;
+    }
+/*
     QMetaObject::invokeMethod(item, "addRowWithSubRowsFromCpp",
-                                Q_RETURN_ARG(QVariant, returnedValue),
-                                Q_ARG(int, 0),
-                                Q_ARG(QString, "C:/Root/Doc/rasa.rvt"),
-                                Q_ARG(QString, "thisIS_3dViewName33"),
-                                Q_ARG(QString, "etoPloshadka33"));
-
-    QMetaObject::invokeMethod(item, "addSubRowWrapper",
                               Q_RETURN_ARG(QVariant, returnedValue),
                               Q_ARG(int, 0),
-                              Q_ARG(QString, ""),
-                              Q_ARG(QString, "Площадка33"));
-
-    QMetaObject::invokeMethod(item, "addSubRowWrapper",
-                              Q_RETURN_ARG(QVariant, returnedValue),
-                              Q_ARG(int, 0),
-                              Q_ARG(QString, "Вьюха33"),
-                              Q_ARG(QString, ""));
-
+                              Q_ARG(QString, "C:/Root/Doc/rasa.rvt"),
+                              Q_ARG(QString, "thisIS_3dViewName33"),
+                              Q_ARG(QString, "etoPloshadka33"));
+*/
     return qGUIApp.exec ();
 }
