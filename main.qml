@@ -49,11 +49,7 @@ function addRowWithSubRowsFromCpp(lvMainRowId: int, filePath: string, _3dview_Te
     /* invalidating DOM immediately */
     lvMain.forceLayout();
 
-    /* child-элемент с индексом 1 предположительно 'reserved' */
-    if(lvMainRowId > 0)
-    {
-        ++lvMainRowId
-    }
+    console.log("Adding checkboxed file " + filePath + " with index " + lvMainRowId);
 
     var lvDOM = lvMain.contentItem;
 
@@ -63,7 +59,7 @@ function addRowWithSubRowsFromCpp(lvMainRowId: int, filePath: string, _3dview_Te
             var secondChild = firstChild.children[0];
             if (secondChild.children.length > 1){
                 var thirdChild = secondChild.children[2]; /* Наш пациент! */
-                if (thirdChild.objectName == "cbExtract3D_" + lvMainRowId){
+                if (thirdChild.objectName === "cbExtract3D_" + lvMainRowId){
 
                     /* var newlyCreatedItem = lvDOM.children[lvMainRowId].children[0].children[2]; */
                     var newlyCreatedItem = thirdChild;
@@ -354,10 +350,21 @@ Rectangle
                 MouseArea
                 {
                     anchors.fill: parent;
-                    onClicked: listModel.remove(index);
+                    onClicked: {
+                        var removedIndex = index;
+                        removeSubRows(index);
+                        listModel.remove(index);
+                        try{
+                            rowsArray.forEach(function(_row, _index) {
+                                if (_row.lvRowIndx > removedIndex)
+                                    _row.lvRowIndx--;
+                            });
+                        }
+                        catch(error){}
+                    }
                 }
             }
-          }
+          } /* Row */
         }
         model: ListModel
         {

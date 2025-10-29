@@ -3,8 +3,8 @@
 IDI_ICON1               ICON    DISCARDABLE     "ico.ico"
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,0
- PRODUCTVERSION 1,0,0,0
+ FILEVERSION 2,17,10,25
+ PRODUCTVERSION 2,17,10,25
  FILEFLAGS 0x0L
  FILEFLAGSMASK 0x3fL
  FILEOS 0x00040004L
@@ -17,12 +17,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Alabuga.dev"
             VALUE "FileDescription", "Alabuga.dev ExportTo"
-            VALUE "FileVersion", "1.17.10.20"
-            VALUE "LegalCopyright", "Copyright (C) 2021 - 2024 Alabuga.dev"
+            VALUE "FileVersion", "2.17.10.25"
+            VALUE "LegalCopyright", "Copyright (C) 2021 - 2025 alabuga.dev"
             VALUE "InternalName", "exportToWindow"
             VALUE "OriginalFilename", "exportToWindow.exe"
             VALUE "ProductName", "BIMALDE"
-            VALUE "ProductVersion", "1.17.10.20"
+            VALUE "ProductVersion", "2.17.10.25"
         END
     END
     BLOCK "VarFileInfo"

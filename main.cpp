@@ -115,6 +115,7 @@ int main (int argc, char* argv[])
     toRestore lineToRestore;
     std::vector<toRestore> vViewsAndSites = backEndRula.GetAllKeysAndValuesOfFile(backEndRula.viewsAndSitesFile);
 
+
     int listIndexToAdd = -1;
     QVariant returnedValue;
 
@@ -145,13 +146,14 @@ int main (int argc, char* argv[])
                                         Q_ARG(QString, lineToRestore.site));
         else
         {
+            ++listIndexToAdd;
             QMetaObject::invokeMethod(item, "addRowWithSubRowsFromCpp",
                                         Q_RETURN_ARG(QVariant, returnedValue),
                                         Q_ARG(int, listIndexToAdd),
                                         Q_ARG(QString, lineToRestore.fname),
                                         Q_ARG(QString, lineToRestore.view),
                                         Q_ARG(QString, lineToRestore.site));
-            ++listIndexToAdd;
+
         }
         lastAdded_fName = lineToRestore.fname;
     }

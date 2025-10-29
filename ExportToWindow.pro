@@ -12,8 +12,8 @@ static {
 # Equivalent to "#define STATIC" in source code
     message("Static build.")
 }
-#INCLUDEPATH += "C:\Program Files (x64)\Qt6\include\qt6"
-INCLUDEPATH += "C:\Program Files (x64)\Qt6.8\include\qt6"
+
+INCLUDEPATH += "C:\Program Files (x64)\Qt6.10\include\qt6"
 SOURCES += main.cpp \
     backend.cpp \
     localsocketipcclient.cpp
@@ -30,7 +30,8 @@ win32: RC_FILE = resources/exportToWindow.rc
 
 HEADERS += \
     backend.h \
-    localsocketipcclient.h
+    localsocketipcclient.h \
+    resources/exportToWindow.rc
 
 DISTFILES += \
     CustomBorderRect.qml \
