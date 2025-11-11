@@ -215,12 +215,20 @@ std::vector<toRestore> BackEnd::GetAllKeysAndValuesOfFile(QString fileName)
 void BackEnd::slotSaveViewAndSiteToFile(QString fName, QString viewName, QString siteName, int appendMode)
 {
     QIODeviceBase::OpenModeFlag writeMode = QIODevice::WriteOnly;
-    if(appendMode) writeMode = QIODevice::Append;
-    QFile file(viewsAndSitesFile);
-    if (file.open(writeMode)) {
-        QTextStream stream(&file);
-        stream << fName << " = " << viewName << " = " << siteName << "\n";
-        file.close();
+    QFile sav_file(viewsAndSitesFile);
+    /* Если AppendMode == -1, то очищаем файл */
+    if (appendMode == -1)
+        sav_file.resize(0);
+    else
+    {
+        /* Если AppendMode == 0, то создаем файл заново */
+        if (appendMode)
+            writeMode = QIODevice::Append;
+        if (sav_file.open(writeMode)) {
+            QTextStream stream(&sav_file);
+            stream << fName << " = " << viewName << " = " << siteName << "\n";
+            sav_file.close();
+        }
     }
 }
 
@@ -243,6 +251,7 @@ void BackEnd::slotIsFileExists(QString fname, QString rvtVersion)
     QQuickItem* lvMain = m_item->findChild<QQuickItem*>("o_lvMain");
     QObject* listModel = lvMain->children()[1];
 
+    /* После закрытия общего доступа к папке по сети, замены в RSN:// неактуальны */
     if (fname.startsWith("RSN://"))
     {
         fname.replace("RSN://", "\\\\");

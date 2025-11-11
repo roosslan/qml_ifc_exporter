@@ -136,6 +136,9 @@ function saveViewsAndSitesToFile()
     for (var x = 0; x < rowsArray.length; ++x){
             signalSaveViewAndSiteToFile(rowsArray[x].filePath, rowsArray[x]._3DViewName, rowsArray[x].siteName, x);
     }
+    /* Если нет файлов с указанными вьюхами/площадками отправляем -1 и файл sav будет очищен */
+    if (rowsArray.length == 0)
+        signalSaveViewAndSiteToFile("", "", "", -1);
 }
 
 Connections
@@ -194,7 +197,7 @@ Rectangle
         {
             id: rsnEditBox;
             width: btnAddLocalProject.width-50;
-            text: "RSN://ALD-SRV-REVITSER/Projects/"
+            text: "RSN://ALD-VM-REVIT01/Projects/"
         }
     }
 
@@ -360,7 +363,8 @@ Rectangle
                                     _row.lvRowIndx--;
                             });
                         }
-                        catch(error){}
+                        catch(error){ console.log(error)
+                        }
                     }
                 }
             }
@@ -468,7 +472,10 @@ Rectangle
         height: 45;
         onClicked:
         {
-            menuLaunch.open();
+            if (lvMain.count != 0)
+                menuLaunch.open()
+            else
+                lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Добавьте, как минимум, один файл в список для экспорта!"});
         }
 
         Menu
