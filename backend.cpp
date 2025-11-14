@@ -125,7 +125,7 @@ void BackEnd::displayMessage(const QString& str)
     //ui->textBrowser_receivedMessages->append(str);
     QQuickItem* lvLog = m_item->findChild<QQuickItem*>("o_lvLog");
     QObject* lmLog = lvLog->children()[1];
-    QAbstractListModel* qLmLog = qobject_cast<QAbstractListModel*>(lmLog);
+//  QAbstractListModel* qLmLog = qobject_cast<QAbstractListModel*>(lmLog);
     QVariant returnedValue;
     QVariant lmMsg = str;
     QMetaObject::invokeMethod(lmLog, "addRow",  /* addRow function defined in QML-file */

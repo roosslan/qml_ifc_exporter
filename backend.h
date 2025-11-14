@@ -84,10 +84,35 @@ class exportQuickView : public QQuickView
     Q_OBJECT
 public:
     explicit exportQuickView(QWindow *parent = nullptr) : QQuickView(parent) {}
-
+    BackEnd* backendRuler;
 protected:
     void closeEvent(QCloseEvent *event) override
     {
+        QVariant returnedValue;
+        QMetaObject::invokeMethod(rootObject(), "getRows_WO_views_n_sites",
+                              Q_RETURN_ARG(QVariant, returnedValue));
+        int rows_WO_views_n_sites = returnedValue.toInt();
+        /* если ListView со списком файлов вернул 0 по позициям со вьюхами, то очищаем секцию в .INF */
+        if(rows_WO_views_n_sites != 0)
+        {
+            QQuickItem* lvMain = rootObject()->findChild<QQuickItem*>("o_lvMain");
+            QObject* listModel = lvMain->children()[1];
+            QAbstractListModel* qmlListModel = qobject_cast<QAbstractListModel*>(listModel);
+
+            if (qmlListModel != nullptr)
+            {
+                for (int i = 0; i < qmlListModel->rowCount(); ++i)
+                {
+                    QString rvtFileName = qmlListModel->data(qmlListModel->index(i, 0), 0).toString();
+                    backendRuler->WriteInfString("SourceDisksFiles", rvtFileName, "");
+                }
+            }
+        }
+        else
+        {
+            backendRuler->DeleteInfSection("SourceDisksFiles");
+        }
+
         QMetaObject::invokeMethod(rootObject(), "saveViewsAndSitesToFile");
         event->accept();
     }

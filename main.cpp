@@ -84,6 +84,7 @@ int main (int argc, char* argv[])
     QObject *item = view.rootObject();
 
     BackEnd backEndRula(&qGUIApp, item, (HWND)view.winId());
+    view.backendRuler = &backEndRula;
 
     QObject::connect(item, SIGNAL(signalBtnIFCSettingsClicked()), &backEndRula, SLOT(slotBtnIFCSettingsClicked()));
     QObject::connect(item, SIGNAL(escKeyPressedSignal()), &backEndRula, SLOT(slotEscPressed()));
@@ -157,13 +158,5 @@ int main (int argc, char* argv[])
         }
         lastAdded_fName = lineToRestore.fname;
     }
-/*
-    QMetaObject::invokeMethod(item, "addRowWithSubRowsFromCpp",
-                              Q_RETURN_ARG(QVariant, returnedValue),
-                              Q_ARG(int, 0),
-                              Q_ARG(QString, "C:/Root/Doc/rasa.rvt"),
-                              Q_ARG(QString, "thisIS_3dViewName33"),
-                              Q_ARG(QString, "etoPloshadka33"));
-*/
     return qGUIApp.exec ();
 }

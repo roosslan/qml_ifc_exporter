@@ -12,10 +12,13 @@ width: 1300;
 height: 870;
 
 focus: true;
-Keys.onEscapePressed: escKeyPressedSignal();
+Keys.onEscapePressed: escKeyPressed();
 
 property bool itemsEnabled: true;
 property bool fileExists: false;
+
+/* отдельный счётчик списка для файлов без галочки 3D */
+property int rows_WO_views_n_sites: 0;
 
 property int defaultSpacing: 10;
 property int topOffset: 10;
@@ -79,6 +82,7 @@ function addRowWithSubRowsFromCpp(lvMainRowId: int, filePath: string, _3dview_Te
 
 function addRowFromCpp(text: string)
 {
+    ++rows_WO_views_n_sites;
     listModel.append({ "path": text });
 }
 
@@ -86,7 +90,7 @@ function set3DViewName(objectName: string, text: string)
 {
     for(var i = 0; i < rowsArray.length; i++)
     {
-        if(rowsArray[i].hwnd.objectName == objectName)
+        if(rowsArray[i].hwnd.objectName === objectName)
         {
             rowsArray[i]._3DViewName = text;
         }
@@ -97,7 +101,7 @@ function setSiteName(objectName: string, text: string)
 {
     for(var i = 0; i < rowsArray.length; i++)
     {
-        if(rowsArray[i].hwnd.objectName == objectName)
+        if(rowsArray[i].hwnd.objectName === objectName)
         {
             rowsArray[i].siteName = text;
         }
@@ -108,7 +112,7 @@ function removeSubRow(objectName: string)
 {
     for(var i = 0; i < rowsArray.length; i++)
     {
-        if(rowsArray[i].hwnd.objectName == objectName)
+        if(rowsArray[i].hwnd.objectName === objectName)
         {
             try{
                 rowsArray.splice(i, 1);
@@ -122,7 +126,7 @@ function removeSubRow(objectName: string)
 function removeSubRows(lvMainRowId: int)    /* Удаляем все подпозиции, если галочку "3D" сняли */
 {
     for(var i = 0; i < rowsArray.length; i++)
-        if(rowsArray[i].lvRowIndx == lvMainRowId)
+        if(rowsArray[i].lvRowIndx === lvMainRowId)
             try{
                 (rowsArray[i].hwnd).destroy();
             }
@@ -130,6 +134,7 @@ function removeSubRows(lvMainRowId: int)    /* Удаляем все подпо�
     rowsArray = rowsArray.filter(function(a){return a.lvRowIndx !== lvMainRowId});
 }
 
+/* ф-ция также вызывается из closeEvent в backend.h */
 function saveViewsAndSitesToFile()
 {
     /* Пишем все вьюхи/площадки в отдельный файл строчками вида 'filename = viewname = sitename' */
@@ -139,6 +144,18 @@ function saveViewsAndSitesToFile()
     /* Если нет файлов с указанными вьюхами/площадками отправляем -1 и файл sav будет очищен */
     if (rowsArray.length == 0)
         signalSaveViewAndSiteToFile("", "", "", -1);
+}
+
+function escKeyPressed()
+{
+    saveViewsAndSitesToFile();
+    escKeyPressedSignal();
+}
+
+/* Ф-ция вызывается из closeEvent в backend.h */
+function getRows_WO_views_n_sites()
+{
+    return rows_WO_views_n_sites;
 }
 
 Connections
@@ -218,8 +235,11 @@ Rectangle
                signalIsFileExists(rsnEditBox.text, cbVersion.currentText);
                if (fileExists)
                {
-                    if ( rsnEditBox.text !== ""){
+                    if ( rsnEditBox.text !== "")
+                    {
                         listModel.append({ "path": rsnEditBox.text });
+                        ++rows_WO_views_n_sites;
+
                     }
                     rsnEditBox.text = "";
                }
@@ -355,6 +375,7 @@ Rectangle
                     anchors.fill: parent;
                     onClicked: {
                         var removedIndex = index;
+                        rows_WO_views_n_sites--;
                         removeSubRows(index);
                         listModel.remove(index);
                         try{
@@ -402,8 +423,8 @@ Rectangle
                 // We have to check for the specific objectName we gave our
                 // delegates above, since we also get some items that are not
                 // our delegates here.
-                if (item.objectName == "summaryDelegate"){
-                    if(i == index){
+                if (item.objectName === "summaryDelegate"){
+                    if(i === index){
                         //return item;
                         var cbExtract3D_0 = item.children[0].children[2];
                         cbExtract3D_0._3DViewText = _3dview_Text;
@@ -472,7 +493,7 @@ Rectangle
         height: 45;
         onClicked:
         {
-            if (lvMain.count != 0)
+            if (lvMain.count !== 0)
                 menuLaunch.open()
             else
                 lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Добавьте, как минимум, один файл в список для экспорта!"});
@@ -813,7 +834,7 @@ Rectangle
         {
             id: labelIFCVersion;
             anchors.top: horizIFC_Col_text.bottom;
-            text: "Настройки IFC:";
+            text: "Задать файл конфигурации .json и версию IFC:";
         }
 
         /* 24.04.2025 Выбор версии IFC перенесен в отд. программу/окно
@@ -851,9 +872,7 @@ Rectangle
             enabled: itemsEnabled;
             anchors.left: labelIFCVersion.right;
             anchors.leftMargin: 15;
-            y: -5;
-            /* width: 30;
-            height: 30; */
+            y: -10;
             ToolTip.text: "Настройки фaйлов IFC";
             ToolTip.visible: hovered;
             onClicked:
