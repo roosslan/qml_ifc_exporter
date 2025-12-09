@@ -29,7 +29,7 @@ BackEnd::BackEnd(QGuiApplication *parent, QObject* item, HWND hWnd)
     m_item = item;
     m_hwnd = hWnd;
 
-    std::uint32_t intHwnd = reinterpret_cast<std::uint32_t>(m_hwnd);
+    const std::uint32_t intHwnd = reinterpret_cast<std::uint32_t>(m_hwnd);
 
     std::stringstream ss;
 
@@ -80,9 +80,9 @@ void BackEnd::appendToSocketList(QTcpSocket* socket)
 void BackEnd::discardSocket()
 {
     QTcpSocket* socket = reinterpret_cast<QTcpSocket*>(sender());
-    QSet<QTcpSocket*>::iterator it = connection_set.find(socket);
+    const QSet<QTcpSocket*>::iterator it = connection_set.find(socket);
     if (it != connection_set.end()){
-//      displayMessage(QString("INFO :: A client : %1 has just left").arg(socket->socketDescriptor()));
+/*      displayMessage(QString("INFO :: A client : %1 has just left").arg(socket->socketDescriptor())); */
         connection_set.remove(*it);
     }
 
@@ -95,11 +95,11 @@ void BackEnd::readSocket()
     QByteArray message = socket->readAll(); // Read message
     qDebug() << "bg | " << QString(message);
 
-    std::string dispLogMsg = QString(message).toStdString();
-    int charCount = 60;  /* split 60 chars */
+    const std::string dispLogMsg = QString(message).toStdString();
+    const int charCount = 60;  /* split 60 chars */
     for (size_t i = 0; i < dispLogMsg.length(); i += charCount)
     {
-        std::string toDispStr = dispLogMsg.substr(i, charCount);
+        const std::string toDispStr = dispLogMsg.substr(i, charCount);
         displayMessage("bgHelper | " + QString::fromStdString(toDispStr));
     }
 }
@@ -125,11 +125,11 @@ void BackEnd::displayError(QAbstractSocket::SocketError socketError)
 void BackEnd::displayMessage(const QString& str)
 {
     //ui->textBrowser_receivedMessages->append(str);
-    QQuickItem* lvLog = m_item->findChild<QQuickItem*>("o_lvLog");
+    const QQuickItem* lvLog = m_item->findChild<QQuickItem*>("o_lvLog");
     QObject* lmLog = lvLog->children()[1];
 //  QAbstractListModel* qLmLog = qobject_cast<QAbstractListModel*>(lmLog);
     QVariant returnedValue;
-    QVariant lmMsg = str;
+    const QVariant lmMsg = str;
     QMetaObject::invokeMethod(lmLog, "addRow",  /* addRow function defined in QML-file */
                               Q_RETURN_ARG(QVariant, returnedValue),
                               Q_ARG(QVariant, lmMsg));
@@ -148,7 +148,7 @@ void BackEnd::slotStopClicked()
     qDebug() << "The control flag 'Enabled' was set to false";
 }
 
-void BackEnd::DeleteInfSection(QString sectionName)
+void BackEnd::DeleteInfSection(const QString sectionName)
 {
     /* Так как все INI-файлы для WritePrivateProfileStringW всегда ANSI, пишем сами - как UTF8 с русскими символами */
     configFile.SetUnicode();
@@ -158,7 +158,7 @@ void BackEnd::DeleteInfSection(QString sectionName)
     rc = configFile.SaveFile(infFile.toStdString().c_str(), false);
 }
 
-void BackEnd::WriteInfString(QString sectionName, QString keyName, QString value)
+void BackEnd::WriteInfString(const QString sectionName, const QString keyName, const QString value)
 {
     /* Так как все INI-файлы для WritePrivateProfileStringW всегда ANSI, пишем сами - как UTF8 с русскими символами */
     configFile.SetUnicode();
@@ -169,34 +169,34 @@ void BackEnd::WriteInfString(QString sectionName, QString keyName, QString value
     rc = configFile.SaveFile(infFile.toStdString().c_str(), false);
 }
 
-QString BackEnd::ReadInfString(QString sectionName, QString keyName)
+QString BackEnd::ReadInfString(const QString sectionName, const QString keyName)
 {
     /* Так как все INI-файлы для WritePrivateProfileStringW всегда ANSI, пишем сами - как UTF8 с русскими символами */
     configFile.SetUnicode();
     SI_Error rc = configFile.LoadFile(infFile.toStdString().c_str());
     /* if (rc < 0){ qDebug() << "Cannot open INF-file " << infFile; }; */
-    auto wc_Val = configFile.GetValue(sectionName.toStdWString().c_str(), keyName.toStdWString().c_str(), L"ОШИБКА_ЧТЕНИЯ_ПУТИ_КАТАЛОГА");
-    QString s_Ret = QString::fromWCharArray(wc_Val);
+    const auto wc_Val = configFile.GetValue(sectionName.toStdWString().c_str(), keyName.toStdWString().c_str(), L"ОШИБКА_ЧТЕНИЯ_ПУТИ_КАТАЛОГА");
+    const QString s_Ret = QString::fromWCharArray(wc_Val);
     return s_Ret;
 }
 
 /* Для загрузки всего содержимого секции [SourceDisksFiles] */
-std::list<QString> BackEnd::GetAllKeysOfSection(QString sectionName)
+std::list<QString> BackEnd::GetAllKeysOfSection(const QString sectionName)
 {
     std::list<QString> rret;
     configFile.SetUnicode();
     CSimpleIniW::TNamesDepend keyList;
-    SI_Error rc = configFile.LoadFile(infFile.toStdString().c_str());
+    const SI_Error rc = configFile.LoadFile(infFile.toStdString().c_str());
 
-    bool res = configFile.GetAllKeys(sectionName.toStdWString().c_str(), keyList);
-    foreach (auto key, keyList) {
+    const bool res = configFile.GetAllKeys(sectionName.toStdWString().c_str(), keyList);
+    foreach (const auto key, keyList) {
         rret.push_back(QString::fromWCharArray(key.pItem).trimmed());
     }
     return rret;
 }
 
 /* Парсим в vec строки (вьюхи/площадки) вида C:/Для экспорта IFC/АР3_проект.rvt = 3dViewNavisworks = Площадка1 */
-std::vector<toRestore> BackEnd::GetAllKeysAndValuesOfFile(QString fileName)
+std::vector<toRestore> BackEnd::GetAllKeysAndValuesOfFile(const QString fileName)
 {
     toRestore lineToRestore;
     std::vector<toRestore> rret;
@@ -209,7 +209,7 @@ std::vector<toRestore> BackEnd::GetAllKeysAndValuesOfFile(QString fileName)
     QTextStream in(&file);
 
     while(!in.atEnd()) {
-        QString line = in.readLine();
+        const QString line = in.readLine();
         QStringList fields = line.split("=");
         lineToRestore.fname = fields.at(0).trimmed();
         lineToRestore.view = fields.at(1).trimmed();
@@ -223,7 +223,7 @@ std::vector<toRestore> BackEnd::GetAllKeysAndValuesOfFile(QString fileName)
     return rret;
 }
 
-void BackEnd::slotSaveViewAndSiteToFile(QString fName, QString viewName, QString siteName, QString outputFileName, QString jsonFilePath, int appendMode)
+void BackEnd::slotSaveViewAndSiteToFile(const QString fName, const QString viewName, const QString siteName, const QString outputFileName, const QString jsonFilePath, const int appendMode)
 {
     QIODeviceBase::OpenModeFlag writeMode = QIODevice::WriteOnly;
     QFile sav_file(viewsAndSitesFile);
@@ -243,13 +243,13 @@ void BackEnd::slotSaveViewAndSiteToFile(QString fName, QString viewName, QString
     }
 }
 
-void BackEnd::slotIsFileExists(QString fname, QString rvtVersion)
+void BackEnd::slotIsFileExists(QString fname, const QString rvtVersion)
 {
     QStringList args;
     args.append(fname);
     args.append(rvtVersion);
 
-    std::uint32_t intHwnd = reinterpret_cast<std::uint32_t>(m_hwnd);
+    const std::uint32_t intHwnd = reinterpret_cast<std::uint32_t>(m_hwnd);
 
     std::stringstream ss;
     std::string s_hwnd;
@@ -259,7 +259,7 @@ void BackEnd::slotIsFileExists(QString fname, QString rvtVersion)
     args.append(QString::fromStdString(s_hwnd));
     QProcess::startDetached("rvthelper.exe", args);
 
-    QQuickItem* lvMain = m_item->findChild<QQuickItem*>("o_lvMain");
+    const QQuickItem* lvMain = m_item->findChild<QQuickItem*>("o_lvMain");
     QObject* listModel = lvMain->children()[1];
 
     /* После закрытия общего доступа к папке по сети, замены в RSN:// неактуальны */
@@ -267,13 +267,13 @@ void BackEnd::slotIsFileExists(QString fname, QString rvtVersion)
     {
         fname.replace("RSN://", "\\\\");
         int spos = fname.indexOf("/");
-        QString serverName = fname.mid(2, spos-2);
+        const QString serverName = fname.mid(2, spos-2);
         fname.replace("\\\\" + serverName + "/", "\\\\" + serverName + "\\Revit23\\");        
     }
     else if (QFile::exists(fname)){ };
 
     QVariant returnedValue;
-    QVariant boolMsg = true;
+    const QVariant boolMsg = true;
     QMetaObject::invokeMethod(listModel, "removeLastRow",
                               Q_RETURN_ARG(QVariant, returnedValue),
                               Q_ARG(QVariant, boolMsg));
@@ -286,23 +286,23 @@ void BackEnd::slotRunClicked(const int rightNow, const QString &utime, const QSt
     WriteInfString("ControlFlags", "Time", utime);
     WriteInfString("ControlFlags", "Date", udate);
 
-    QQuickItem* qcbRvtVers = m_item->findChild<QQuickItem*>("row_RvtVersion");
+    const QQuickItem* qcbRvtVers = m_item->findChild<QQuickItem*>("row_RvtVersion");
     QObject* cb_RvtVers = qcbRvtVers->children()[1];
-    QString revitVersion = cb_RvtVers->property("currentText").toString();
+    const QString revitVersion = cb_RvtVers->property("currentText").toString();
     WriteInfString("ControlFlags", "RevitVersion", revitVersion);
 
-    QQuickItem* qcheckboxIFC = m_item->findChild<QQuickItem*>("cbIFC");
+    const QQuickItem* qcheckboxIFC = m_item->findChild<QQuickItem*>("cbIFC");
     bool IsCheckboxIFC_checked = qcheckboxIFC->property("checked").toBool();
-    QString sIFC_checked = QVariant(IsCheckboxIFC_checked).toString();
+    const QString sIFC_checked = QVariant(IsCheckboxIFC_checked).toString();
     WriteInfString("RVT", "IFC", sIFC_checked);
 
-    QQuickItem* checkboxNavi = m_item->findChild<QQuickItem*>("cbNavi");
+    const QQuickItem* checkboxNavi = m_item->findChild<QQuickItem*>("cbNavi");
     bool IsCheckboxNavi_checked = checkboxNavi->property("checked").toBool();
-    QString sNavi_checked = QVariant(IsCheckboxNavi_checked).toString();
+    const QString sNavi_checked = QVariant(IsCheckboxNavi_checked).toString();
     WriteInfString("RVT", "NWC", sNavi_checked);
 
-    QQuickItem* QQuickText_IFCPath = m_item->findChild<QQuickItem*>("text_IFCPath");
-    QString sIFCPath = QQuickText_IFCPath->property("text").toString();
+    const QQuickItem* QQuickText_IFCPath = m_item->findChild<QQuickItem*>("text_IFCPath");
+    const QString sIFCPath = QQuickText_IFCPath->property("text").toString();
     WriteInfString("DestinationDirs", "DefaultDestDir", sIFCPath);
 
     /* 24.04.2025 Выбор версии IFC перенесен в отд. программу/окно  */
@@ -312,15 +312,15 @@ void BackEnd::slotRunClicked(const int rightNow, const QString &utime, const QSt
     /* QString ifcVersion = cbIFCvers->property("currentText").toString();
     /* WriteInfString("ControlFlags", "IFCVersion", ifcVersion);    */
 
-    QQuickItem* lvMain = m_item->findChild<QQuickItem*>("o_lvMain");
-    QObject* listModel = lvMain->children()[1];
-    QAbstractListModel* qmlListModel = qobject_cast<QAbstractListModel*>(listModel);
+    const QQuickItem* lvMain = m_item->findChild<QQuickItem*>("o_lvMain");
+    const QObject* listModel = lvMain->children()[1];
+    const QAbstractListModel* qmlListModel = qobject_cast<QAbstractListModel*>(listModel);
 
     if (qmlListModel != nullptr)
     {
         for (int i = 0; i < qmlListModel->rowCount(); ++i)
         {
-            QString rvtFileName = qmlListModel->data(qmlListModel->index(i, 0), 0).toString();
+            const QString rvtFileName = qmlListModel->data(qmlListModel->index(i, 0), 0).toString();
             WriteInfString("SourceDisksFiles", rvtFileName, "");
         }
     }
@@ -366,12 +366,12 @@ void bgMessageHandler(QtMsgType type, const QMessageLogContext &, const QString 
         abort();
     }
     const QString fileName{"alabuga.q.log"};
-    QString appData = getenv("appdata");
+    const QString appData = getenv("appdata");
 
     if (appData.isEmpty()) {
         qFatal("Unable to find appData directory!");
     }
-    QString logFileLocation = "\\alabuga_dev\\" + fileName;
+    const QString logFileLocation = "\\alabuga_dev\\" + fileName;
     QFile outFile(appData + logFileLocation);
 
     if (txt != "" && !msg.startsWith("QML Debugger: Waiting for connection on port") )

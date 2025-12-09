@@ -45,7 +45,7 @@ class BackEnd : public QObject
 
     QSet<QTcpSocket*> connection_set;
 signals:
-    void newMessage(QString);
+    void newMessage(const QString);
 private slots:
     void newSocketConnection();
     void appendToSocketList(QTcpSocket* socket);
@@ -69,13 +69,13 @@ public slots:
     void slotStopClicked();
 /*  void slotBtnIFCSettingsClicked();     */
     void slotRunClicked(const int rightNow, const QString &utime, const QString &udate);
-    void slotIsFileExists(QString fname, QString rvtVersion);
-    void slotSaveViewAndSiteToFile(QString fName, QString viewName, QString siteName, QString outputFileName, QString jsonFilePath, int appendMode);
-    QString ReadInfString(QString sectionName, QString keyName);
+    void slotIsFileExists(QString fname, const QString rvtVersion);
+    void slotSaveViewAndSiteToFile(const QString fName, const QString viewName, const QString siteName, const QString outputFileName, const QString jsonFilePath, const int appendMode);
+    QString ReadInfString(const QString sectionName, const QString keyName);
     std::list<QString> GetAllKeysOfSection(QString sectionName);
-    std::vector<toRestore> GetAllKeysAndValuesOfFile(QString fileName);
-    void WriteInfString(QString sectionName, QString keyName, QString value);
-    void DeleteInfSection(QString sectionName);
+    std::vector<toRestore> GetAllKeysAndValuesOfFile(const QString fileName);
+    void WriteInfString(const QString sectionName, const QString keyName, const QString value);
+    void DeleteInfSection(const QString sectionName);
 };
 
 void bgMessageHandler(QtMsgType type, const QMessageLogContext &, const QString & msg);

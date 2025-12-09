@@ -371,6 +371,7 @@ Rectangle
                     else
                     {
                         removeSubRows(index);
+                        ++rows_WO_views_n_sites;
                     }
                 }
             }

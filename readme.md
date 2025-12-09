@@ -1,4 +1,4 @@
-Not for QML designer.\
+QML designer v18+.\
 \
 The file main.qml, folders "resources" and "shared" should be placed one level top, than the executable.
 \

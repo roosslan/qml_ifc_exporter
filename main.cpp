@@ -89,12 +89,13 @@ int main (int argc, char* argv[])
     QObject::connect(item, SIGNAL(signalBtnIFCSettingsClicked()), &backEndRula, SLOT(slotBtnIFCSettingsClicked()));
     QObject::connect(item, SIGNAL(escKeyPressedSignal()), &backEndRula, SLOT(slotEscPressed()));
     QObject::connect(item, SIGNAL(signalStopClicked()), &backEndRula, SLOT(slotStopClicked()));
-    QObject::connect(item, SIGNAL(signalRunClicked(int, QString, QString)), &backEndRula, SLOT(slotRunClicked(int, QString, QString)));
-    QObject::connect(item, SIGNAL(signalIsFileExists(QString, QString)), &backEndRula, SLOT(slotIsFileExists(QString, QString)));
-    QObject::connect(item, SIGNAL(signalSaveViewAndSiteToFile(QString, QString, QString, QString, QString, int)), &backEndRula, SLOT(slotSaveViewAndSiteToFile(QString, QString, QString, QString, QString, int)));
+    QObject::connect(item, SIGNAL(signalRunClicked(const int, const QString, const QString)), &backEndRula, SLOT(slotRunClicked(const int, const QString, const QString)));
+    QObject::connect(item, SIGNAL(signalIsFileExists(const QString, const QString)), &backEndRula, SLOT(slotIsFileExists(const QString, const QString)));
+    QObject::connect(item, SIGNAL(signalSaveViewAndSiteToFile(const QString, const QString, const QString, const QString, const QString, const int)),
+                     &backEndRula, SLOT(slotSaveViewAndSiteToFile(const QString, const String, const QString, const QString, const QString, const int)));
 
     /* Чтобы пользователь был уверен, что путь с последнего сеанса сохранился: */
-    QString exportDirectory = backEndRula.ReadInfString("DestinationDirs", "DefaultDestDir");
+    const QString exportDirectory = backEndRula.ReadInfString("DestinationDirs", "DefaultDestDir");
     QQuickItem* QQuickText_IFCPath = item->findChild<QQuickItem*>("text_IFCPath");
     QQuickText_IFCPath->setProperty("text", exportDirectory);
 
@@ -112,21 +113,21 @@ int main (int argc, char* argv[])
     view.setMaximumWidth(windowWidth);
     view.setMinimumWidth(windowWidth);
 
-    std::list<QString> vFilesList = backEndRula.GetAllKeysOfSection("SourceDisksFiles");
+    const std::list<QString> vFilesList = backEndRula.GetAllKeysOfSection("SourceDisksFiles");
     toRestore lineToRestore;
-    std::vector<toRestore> vViewsAndSites = backEndRula.GetAllKeysAndValuesOfFile(backEndRula.viewsAndSitesFile);
+    const std::vector<toRestore> vViewsAndSites = backEndRula.GetAllKeysAndValuesOfFile(backEndRula.viewsAndSitesFile);
 
 
     int listIndexToAdd = -1;
     QVariant returnedValue;
 
-    foreach (QString fName, vFilesList) {
+    foreach (const QString fName, vFilesList) {
          /* Добавляем в список обыкновенные RVT, без вьюх и площадок */
-        auto it = std::find_if(vViewsAndSites.begin(), vViewsAndSites.end(),
+        const auto it = std::find_if(vViewsAndSites.begin(), vViewsAndSites.end(),
                      [&fName](const toRestore& item) {
                          return item.fname == fName;
             });
-        if(it == vViewsAndSites.end())
+        if (it == vViewsAndSites.end())
         {
             QMetaObject::invokeMethod(item, "addRowFromCpp",
                                         Q_RETURN_ARG(QVariant, returnedValue),
@@ -139,25 +140,25 @@ int main (int argc, char* argv[])
     /* Добавляем в список всё остальное, эти файлы уже с указанными вьюхами или площадками */
     foreach (const auto lineToRestore, vViewsAndSites)
     {
-        if(lastAdded_fName == lineToRestore.fname)
+        if (lastAdded_fName == lineToRestore.fname)
             QMetaObject::invokeMethod(item, "addSubRowWrapper",
                                         Q_RETURN_ARG(QVariant, returnedValue),
-                                        Q_ARG(int, listIndexToAdd),
-                                        Q_ARG(QString, lineToRestore.view),
-                                        Q_ARG(QString, lineToRestore.site),
-                                        Q_ARG(QString, lineToRestore.outputfname),
-                                        Q_ARG(QString, lineToRestore.jsonpath));
+                                        Q_ARG(const int, listIndexToAdd),
+                                        Q_ARG(const QString, lineToRestore.view),
+                                        Q_ARG(const QString, lineToRestore.site),
+                                        Q_ARG(const QString, lineToRestore.outputfname),
+                                        Q_ARG(const QString, lineToRestore.jsonpath));
         else
         {
             ++listIndexToAdd;
             QMetaObject::invokeMethod(item, "addRowWithSubRowsFromCpp",
                                         Q_RETURN_ARG(QVariant, returnedValue),
-                                        Q_ARG(int, listIndexToAdd),
-                                        Q_ARG(QString, lineToRestore.fname),
-                                        Q_ARG(QString, lineToRestore.view),
-                                        Q_ARG(QString, lineToRestore.site),
-                                        Q_ARG(QString, lineToRestore.outputfname),
-                                        Q_ARG(QString, lineToRestore.jsonpath));
+                                        Q_ARG(const int, listIndexToAdd),
+                                        Q_ARG(const QString, lineToRestore.fname),
+                                        Q_ARG(const QString, lineToRestore.view),
+                                        Q_ARG(const QString, lineToRestore.site),
+                                        Q_ARG(const QString, lineToRestore.outputfname),
+                                        Q_ARG(const QString, lineToRestore.jsonpath));
 
         }
         lastAdded_fName = lineToRestore.fname;

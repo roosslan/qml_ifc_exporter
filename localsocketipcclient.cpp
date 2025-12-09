@@ -33,8 +33,6 @@ void LocalSocketIpcClient::socket_connected(){
 
     QByteArray block;
 
-
-
     QDataStream out(&block, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
     out << m_message.toUtf8().data();
