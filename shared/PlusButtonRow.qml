@@ -3,28 +3,33 @@
 
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Dialogs
 
-Row {
+Row
+{
     id: rowItem;
-    x: 180;
+    x: 18;
     property var parentRef;
     property bool trashcanVisible;
     property int lvRowId;
-    property string _3dViewText;
-    property string siteNam;
+    property string plusBtnProp_3dViewText;
+    property string plusBtnProp_siteNam;
+    property string plusBtnProp_outputFileNam;
+    property string plusBtnProp_jsonFilePath;
 
-    TextField {
+    TextField
+    {
         id: tfViewField;
-        width: 180;
-        text: _3dViewText;
+        width: 165;
+        text: plusBtnProp_3dViewText;
         placeholderText: "Введите название 3D-вида";
 
-        onTextChanged: {
-            rowItem.parentRef.set3DViewName(parent.objectName, text);
+        onTextChanged:{
+            rowItem.parentRef.setInputFieldText("arrf_3DViewName", parent.objectName, text);
         }
 
-
-        background: Rectangle {
+        background: Rectangle
+        {
             color: "transparent";
             border.width: 0;
             border.color: "gray"
@@ -40,22 +45,23 @@ Row {
         }
     }
 
-
+    /* Разделитель между полями ввода */
     Rectangle
     {
         color: "transparent";
         height: 1;
-        width: 60;
+        width: 10;
     }
 
-    TextField {
+    TextField
+    {
         id: tfSiteField;
-        width: 220;
-        text: siteNam;
-        placeholderText: "Введите наименование площадки";
+        width: 175;
+        text: plusBtnProp_siteNam;
+        placeholderText: "Введите название площадки";
 
         onTextChanged: {
-            rowItem.parentRef.setSiteName(parent.objectName, text);
+            rowItem.parentRef.setInputFieldText("arrf_siteName", parent.objectName, text);
         }        
 
         background: Rectangle {
@@ -65,6 +71,53 @@ Row {
 
             // Remove specific borders by drawing only bottom line
             // Top, left, and right are transparent or width 0
+            Rectangle
+            {
+                anchors.bottom: parent.bottom;
+                height: 1;
+                width: parent.width;
+                color: "gray";
+            }
+        }
+
+        ContextMenu.menu: Menu {
+                MenuItem {
+                    text: qsTr("Очистить")
+                    onTriggered:
+                    {
+                        tfSiteField.text = "";
+                        tfSiteField.textChanged();
+                    }
+                }
+        }
+    }
+
+    /* Разделитель между полями ввода */
+    Rectangle
+    {
+        color: "transparent";
+        height: 1;
+        width: 10;
+    }
+
+    TextField
+    {
+        id: tfOutputFileName;
+        width: 145;
+        text: plusBtnProp_outputFileNam;
+        placeholderText: "Имя выходного файла";
+
+        onTextChanged: {
+            rowItem.parentRef.setInputFieldText("arrf_outputFileName", parent.objectName, text);
+        }
+
+        background: Rectangle {
+            color: "transparent";
+            border.width: 0;
+            border.color: "gray"
+
+            // Remove specific borders by drawing only bottom line
+            // Top, left, and right are transparent or width 0
             Rectangle {
                 anchors.bottom: parent.bottom;
                 height: 1;
@@ -74,15 +127,65 @@ Row {
         }
     }
 
-    RoundButton {
+    /* Разделитель между полями ввода */
+    Rectangle
+    {
+        color: "transparent";
+        height: 1;
+        width: 10;
+    }
+
+    TextField
+    {
+        id: tfJsonFilePath;
+        width: 155;
+        text: plusBtnProp_jsonFilePath;
+        placeholderText: "Путь к предустанов.json";
+
+        onTextChanged: {
+            rowItem.parentRef.setInputFieldText("arrf_jsonPath", parent.objectName, text);
+        }
+
+        background: Rectangle
+        {
+            color: "transparent";
+            border.width: 0;
+            border.color: "gray"
+
+            // Remove specific borders by drawing only bottom line
+            // Top, left, and right are transparent or width 0
+            Rectangle {
+                anchors.bottom: parent.bottom;
+                height: 1;
+                width: parent.width;
+                color: "gray";
+            }
+        }
+    }
+
+    RoundButton
+    {
+        text: "…"
+        height: 18;
+        width: 18;
+         onClicked: fileSelectDialog.open();
+    }
+    Rectangle
+    {
+        color: "transparent";
+        height: 1;
+        width: 10;
+    }
+    RoundButton
+    {
         text: "+"
         height: 18;
         width: 18;
         onClicked:
         {
-            if(tfViewField.text == "" && tfSiteField.text == ""){}
+            if(tfViewField.text === "" && tfSiteField.text === "" && tfOutputFilename.text === "" && tfJsonFilePath.text === ""){}
             else
-                rowItem.parentRef.addSubRowWrapper(parent.lvRowId, "", "");
+                rowItem.parentRef.addSubRowWrapper(parent.lvRowId, "", "", "", "");
         }
     }
 
@@ -102,6 +205,24 @@ Row {
                 rowItem.parentRef.removeSubRow(parent.parent.objectName);
                 parent.parent.destroy();
             }
+        }
+    }
+
+    FileDialog
+    {
+        id: fileSelectDialog;
+        title: "Please choose a file";
+        nameFilters: ["JSON files (*.json)"];
+        onAccepted:
+        {
+            var path = fileSelectDialog.selectedFile.toString();
+            // remove prefixed "file:///"
+            path = path.replace(/^(file:\/{3})/,"");
+            // unescape html codes like '%23' for '#'
+            tfJsonFilePath.text = decodeURIComponent(path);
+            fileSelectDialog.selectedFile = "";
+            fileSelectDialog.close();
+
         }
     }
 }

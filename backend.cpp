@@ -12,14 +12,16 @@
 #include <sstream>
 #include "localsocketipcclient.h"
 
+/*
 void BackEnd::slotBtnIFCSettingsClicked()
 {
-    /* Передаем окну IFCSettings наш handle, чтобы ifcSettings показался модально */
+    Передаем окну IFCSettings наш handle, чтобы ifcSettings показался модально
     QStringList args;
 
     args.append(QString::fromStdString(m_str_hwnd));
     QProcess::startDetached("ifcsettings.exe", args);
 }
+*/
 
 BackEnd::BackEnd(QGuiApplication *parent, QObject* item, HWND hWnd)
 {
@@ -91,7 +93,7 @@ void BackEnd::readSocket()
 {
     QTcpSocket* socket = reinterpret_cast<QTcpSocket*>(sender());
     QByteArray message = socket->readAll(); // Read message
-    qDebug() << "bgHelper | " << QString(message);
+    qDebug() << "bg | " << QString(message);
 
     std::string dispLogMsg = QString(message).toStdString();
     int charCount = 60;  /* split 60 chars */
@@ -131,8 +133,15 @@ void BackEnd::displayMessage(const QString& str)
     QMetaObject::invokeMethod(lmLog, "addRow",  /* addRow function defined in QML-file */
                               Q_RETURN_ARG(QVariant, returnedValue),
                               Q_ARG(QVariant, lmMsg));
+
+    if (str.startsWith("bgHelper | End of export"))
+    {
+        QMetaObject::invokeMethod(m_item, "stopClicked",
+                                  Q_RETURN_ARG(QVariant, returnedValue));
+    }
 }
 
+/* Вызывается из .qml - btnStop::onClicked */
 void BackEnd::slotStopClicked()
 {
     WriteInfString("ControlFlags", "Enabled", "false");
@@ -205,6 +214,8 @@ std::vector<toRestore> BackEnd::GetAllKeysAndValuesOfFile(QString fileName)
         lineToRestore.fname = fields.at(0).trimmed();
         lineToRestore.view = fields.at(1).trimmed();
         lineToRestore.site = fields.at(2).trimmed();
+        lineToRestore.outputfname = fields.at(3).trimmed();
+        lineToRestore.jsonpath = fields.at(4).trimmed();
         rret.push_back(lineToRestore);
         lineToRestore  = {};
     }
@@ -212,7 +223,7 @@ std::vector<toRestore> BackEnd::GetAllKeysAndValuesOfFile(QString fileName)
     return rret;
 }
 
-void BackEnd::slotSaveViewAndSiteToFile(QString fName, QString viewName, QString siteName, int appendMode)
+void BackEnd::slotSaveViewAndSiteToFile(QString fName, QString viewName, QString siteName, QString outputFileName, QString jsonFilePath, int appendMode)
 {
     QIODeviceBase::OpenModeFlag writeMode = QIODevice::WriteOnly;
     QFile sav_file(viewsAndSitesFile);
@@ -226,7 +237,7 @@ void BackEnd::slotSaveViewAndSiteToFile(QString fName, QString viewName, QString
             writeMode = QIODevice::Append;
         if (sav_file.open(writeMode)) {
             QTextStream stream(&sav_file);
-            stream << fName << " = " << viewName << " = " << siteName << "\n";
+            stream << fName << " = " << viewName << " = " << siteName << " = " << outputFileName << " = " << jsonFilePath << "\n";
             sav_file.close();
         }
     }

@@ -91,7 +91,7 @@ int main (int argc, char* argv[])
     QObject::connect(item, SIGNAL(signalStopClicked()), &backEndRula, SLOT(slotStopClicked()));
     QObject::connect(item, SIGNAL(signalRunClicked(int, QString, QString)), &backEndRula, SLOT(slotRunClicked(int, QString, QString)));
     QObject::connect(item, SIGNAL(signalIsFileExists(QString, QString)), &backEndRula, SLOT(slotIsFileExists(QString, QString)));
-    QObject::connect(item, SIGNAL(signalSaveViewAndSiteToFile(QString, QString, QString, int)), &backEndRula, SLOT(slotSaveViewAndSiteToFile(QString, QString, QString, int)));
+    QObject::connect(item, SIGNAL(signalSaveViewAndSiteToFile(QString, QString, QString, QString, QString, int)), &backEndRula, SLOT(slotSaveViewAndSiteToFile(QString, QString, QString, QString, QString, int)));
 
     /* Чтобы пользователь был уверен, что путь с последнего сеанса сохранился: */
     QString exportDirectory = backEndRula.ReadInfString("DestinationDirs", "DefaultDestDir");
@@ -144,7 +144,9 @@ int main (int argc, char* argv[])
                                         Q_RETURN_ARG(QVariant, returnedValue),
                                         Q_ARG(int, listIndexToAdd),
                                         Q_ARG(QString, lineToRestore.view),
-                                        Q_ARG(QString, lineToRestore.site));
+                                        Q_ARG(QString, lineToRestore.site),
+                                        Q_ARG(QString, lineToRestore.outputfname),
+                                        Q_ARG(QString, lineToRestore.jsonpath));
         else
         {
             ++listIndexToAdd;
@@ -153,7 +155,9 @@ int main (int argc, char* argv[])
                                         Q_ARG(int, listIndexToAdd),
                                         Q_ARG(QString, lineToRestore.fname),
                                         Q_ARG(QString, lineToRestore.view),
-                                        Q_ARG(QString, lineToRestore.site));
+                                        Q_ARG(QString, lineToRestore.site),
+                                        Q_ARG(QString, lineToRestore.outputfname),
+                                        Q_ARG(QString, lineToRestore.jsonpath));
 
         }
         lastAdded_fName = lineToRestore.fname;

@@ -21,6 +21,9 @@ struct toRestore
     QString fname;
     QString view;
     QString site;
+    QString outputfname;
+    QString jsonpath;
+
 };
 
 class BackEnd : public QObject
@@ -64,10 +67,10 @@ public:
 public slots:
     void slotEscPressed();
     void slotStopClicked();
-    void slotBtnIFCSettingsClicked();
+/*  void slotBtnIFCSettingsClicked();     */
     void slotRunClicked(const int rightNow, const QString &utime, const QString &udate);
     void slotIsFileExists(QString fname, QString rvtVersion);
-    void slotSaveViewAndSiteToFile(QString fName, QString viewName, QString siteName, int appendMode);
+    void slotSaveViewAndSiteToFile(QString fName, QString viewName, QString siteName, QString outputFileName, QString jsonFilePath, int appendMode);
     QString ReadInfString(QString sectionName, QString keyName);
     std::list<QString> GetAllKeysOfSection(QString sectionName);
     std::vector<toRestore> GetAllKeysAndValuesOfFile(QString fileName);

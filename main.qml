@@ -23,7 +23,7 @@ property int rows_WO_views_n_sites: 0;
 property int defaultSpacing: 10;
 property int topOffset: 10;
 property var idRowAdditionalFields;
-property var rowsArray: [{ strHWND: "", hwnd: QtObject, lvRowIndx: 0, filePath: "", _3DViewName: "", siteName: ""}];
+property var rowsArray: [{ strHWND: "", hwnd: QtObject, lvRowIndx: 0, arrf_filePath: "", arrf_3DViewName: "", arrf_siteName: "", arrf_outputFileName: "", arrf_jsonPath: ""}];
 property string home_directory: "";
 property string selectedDate: new Date().toLocaleString(Qt.locale(),"dd.MM.yyyy");
 
@@ -31,7 +31,7 @@ signal signalBtnIFCSettingsClicked();
 signal signalStopClicked();
 signal signalRunClicked(rightNow: int, utime: string, udate: string);
 signal escKeyPressedSignal();
-signal signalSaveViewAndSiteToFile(fileName: string, viewName: string, site_Name: string, isAppend: int);
+signal signalSaveViewAndSiteToFile(fileName: string, viewName: string, site_Name: string, sigOutputFileName: string, sigparam_JsonPath: string, isAppend: int);
 
 signal signalIsFileExists(fname: string, rvtVersion: string);
 
@@ -41,11 +41,20 @@ Component.onCompleted:
     rowsArray.splice(0, 1);
 }
 
-function addSubRowWrapper(lvMainRowId: int, _3dview_Text: string, site_Text: string){
-    lvMain.addSubRow(lvMainRowId, _3dview_Text, site_Text);
+/* Обернули сигнал в ф-цию, чтобы вызывать его из backend */
+function stopClicked()
+{
+    signalStopClicked();
+    lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Процесс закрыт"});
+    itemsEnabled = true;
 }
 
-function addRowWithSubRowsFromCpp(lvMainRowId: int, filePath: string, _3dview_Text: string, site_Text: string)
+function addSubRowWrapper(lvMainRowId: int, _3dview_Text: string, site_Text: string, fNameText: string, JSON_text: string)
+{
+    lvMain.addSubRow(lvMainRowId, _3dview_Text, site_Text, fNameText, JSON_text);
+}
+
+function addRowWithSubRowsFromCpp(lvMainRowId: int, filePath: string, _3dview_Text: string, site_Text: string, fNameText: string, JSON_text: string)
 {
     listModel.append({ "path": filePath });
 
@@ -62,48 +71,44 @@ function addRowWithSubRowsFromCpp(lvMainRowId: int, filePath: string, _3dview_Te
             var secondChild = firstChild.children[0];
             if (secondChild.children.length > 1){
                 var thirdChild = secondChild.children[2]; /* Наш пациент! */
-                if (thirdChild.objectName === "cbExtract3D_" + lvMainRowId){
-
-                    /* var newlyCreatedItem = lvDOM.children[lvMainRowId].children[0].children[2]; */
+                if (thirdChild.objectName === "cbExtract3D_" + lvMainRowId)
+                {
                     var newlyCreatedItem = thirdChild;
-                    newlyCreatedItem._3DViewText = _3dview_Text;
-                    newlyCreatedItem.siteText = site_Text;
+
+                    newlyCreatedItem.cbProp_3DViewText = _3dview_Text;
+                    newlyCreatedItem.cbProp_siteText = site_Text;
+                    newlyCreatedItem.cbProp_filenameText = fNameText;
+                    newlyCreatedItem.cbProp_jsonPathText = JSON_text;
                     newlyCreatedItem.checked = 1;
+
                     newlyCreatedItem.clicked();
 
                     /* Чистим, т.к. иначе текст запоминается в properties контрола и потом дублируется */
-                    newlyCreatedItem._3DViewText = "";
-                    newlyCreatedItem.siteText = "";
+                    newlyCreatedItem.cbProp_3DViewText = "";
+                    newlyCreatedItem.cbProp_siteText = "";
+                    newlyCreatedItem.cbProp_filenameText = "";
+                    newlyCreatedItem.cbProp_jsonPathText = "";
                 }
             }
         }
     }
 }
 
-function addRowFromCpp(text: string)
+function addRowFromCpp(rvt_filePath: string)
 {
+    /* rows_WO_views_n_sites - это отдельный счётчик списка для файлов без галочки "3D" */
     ++rows_WO_views_n_sites;
-    listModel.append({ "path": text });
+
+    listModel.append({ "path": rvt_filePath });
 }
 
-function set3DViewName(objectName: string, text: string)
+function setInputFieldText(fieldName: string, objectName: string, text: string)
 {
     for(var i = 0; i < rowsArray.length; i++)
     {
         if(rowsArray[i].hwnd.objectName === objectName)
         {
-            rowsArray[i]._3DViewName = text;
-        }
-    }
-}
-
-function setSiteName(objectName: string, text: string)
-{
-    for(var i = 0; i < rowsArray.length; i++)
-    {
-        if(rowsArray[i].hwnd.objectName === objectName)
-        {
-            rowsArray[i].siteName = text;
+            rowsArray[i][fieldName] = text;
         }
     }
 }
@@ -139,11 +144,11 @@ function saveViewsAndSitesToFile()
 {
     /* Пишем все вьюхи/площадки в отдельный файл строчками вида 'filename = viewname = sitename' */
     for (var x = 0; x < rowsArray.length; ++x){
-            signalSaveViewAndSiteToFile(rowsArray[x].filePath, rowsArray[x]._3DViewName, rowsArray[x].siteName, x);
+            signalSaveViewAndSiteToFile(rowsArray[x].arrf_filePath, rowsArray[x].arrf_3DViewName, rowsArray[x].arrf_siteName, rowsArray[x].arrf_outputFileName, rowsArray[x].arrf_jsonPath, x);
     }
-    /* Если нет файлов с указанными вьюхами/площадками отправляем -1 и файл sav будет очищен */
+    /* Если нет файлов с указанными вьюхами/площадками/json'ами, то отправляем -1 и файл sav будет очищен */
     if (rowsArray.length == 0)
-        signalSaveViewAndSiteToFile("", "", "", -1);
+        signalSaveViewAndSiteToFile("", "", "", "", "", -1);
 }
 
 function escKeyPressed()
@@ -197,7 +202,7 @@ Rectangle
             top: parent.top;
             margins: defaultSpacing;
         }
-        text: "Добавить локальный проект";
+        text: "Нажмите сюда, чтобы добавить локальный проект";
         height: 22;
         width: 800;
         onClicked: fileDialog.open();
@@ -347,17 +352,21 @@ Rectangle
                 width: 17;
                 checked: false;
                 property int trashcanVisible: 0;
-                property string _3DViewText: "";
-                property string siteText: "";
+                property string cbProp_3DViewText: "";
+                property string cbProp_siteText: "";
+                property string cbProp_filenameText: "";
+                property string cbProp_jsonPathText: "";
 
                 onClicked:{
                     idRowAdditionalFields = horizontalColumn;
                     if (cbExtract3D.checked)
                     {
                         var component = Qt.createComponent("shared\\PlusButtonRow.qml");
-                        var subRow = component.createObject(idRowAdditionalFields, { "parentRef": mainWindow, "lvRowId":  index, "trashcanVisible": trashcanVisible, "_3dViewText": _3DViewText, "siteNam": siteText } );
+                        var subRow = component.createObject(idRowAdditionalFields, { "parentRef": mainWindow, "lvRowId":  index, "trashcanVisible": trashcanVisible,
+                                                                "plusBtnProp_3dViewText": cbProp_3DViewText, "plusBtnProp_siteNam": cbProp_siteText, "plusBtnProp_outputFileNam" : cbProp_filenameText, "plusBtnProp_jsonFilePath" : cbProp_jsonPathText } );
                         subRow.objectName = subRow.toString();
-                        rowsArray.push({strHWND: subRow.objectName, hwnd: subRow, lvRowIndx: index, filePath: path, _3DViewName: _3DViewText, siteName: siteText});
+                        rowsArray.push({strHWND: subRow.objectName, hwnd: subRow, lvRowIndx: index, arrf_filePath: path,
+                                           arrf_3DViewName: cbProp_3DViewText, arrf_siteName: cbProp_siteText, arrf_outputFileName: cbProp_filenameText, arrf_jsonPath: cbProp_jsonPathText });
                     }
                     else
                     {
@@ -416,7 +425,7 @@ Rectangle
         // Uses black magic to hunt for the delegate instance with the given
         // index. Returns undefined if there's no currently instantiated
         // delegate with that index.
-        function addSubRow(index: int, _3dview_Text: string, site_Text: string){
+        function addSubRow(index: int, _3dview_Text: string, site_Text: string, fNameText: string, JSON_text: string){
             var i = 0;
             for(var x = 0; x < contentItem.children.length; ++x) {
                 var item = contentItem.children[x];
@@ -427,15 +436,21 @@ Rectangle
                     if(i === index){
                         //return item;
                         var cbExtract3D_0 = item.children[0].children[2];
-                        cbExtract3D_0._3DViewText = _3dview_Text;
-                        cbExtract3D_0.siteText = site_Text;
+
+                        cbExtract3D_0.cbProp_3DViewText = _3dview_Text;
+                        cbExtract3D_0.cbProp_siteText = site_Text;
+                        cbExtract3D_0.cbProp_filenameText = fNameText;
+                        cbExtract3D_0.cbProp_jsonPathText = JSON_text;
                         cbExtract3D_0.trashcanVisible = 1;
-                        cbExtract3D_0.clicked();
-                        cbExtract3D_0.trashcanVisible = 0;
+
+                        cbExtract3D_0.clicked();                        
 
                         /* Чистим, т.к. иначе текст запоминается в properties контрола и потом дублируется */
-                        cbExtract3D_0._3DViewText = "";
-                        cbExtract3D_0.siteText = "";
+                        cbExtract3D_0.trashcanVisible = 0;
+                        cbExtract3D_0.cbProp_3DViewText = "";
+                        cbExtract3D_0.cbProp_siteText = "";
+                        cbExtract3D_0.cbProp_filenameText = "";
+                        cbExtract3D_0.cbProp_jsonPathText = "";
                     }
                     ++i;
                 }
@@ -546,9 +561,7 @@ Rectangle
         height: 45;
         onClicked:
         {
-            signalStopClicked();
-            lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Процесс закрыт"});
-            itemsEnabled = true;
+            stopClicked();
         }
     }
 
@@ -745,6 +758,7 @@ Rectangle
 /************************************* Время выгрузки ****************************************/
 
 /******************************* Industry Foundation Classes **********************************/
+
     CheckBoxALDE
     {
         id: cbIFC;
@@ -786,12 +800,21 @@ Rectangle
         }
     }
 
+    LabelALDE
+    {
+        id: labelSelectDir;
+        anchors.topMargin: 10;
+        x: 20;
+        anchors.top: cbIFC.bottom;
+        text: "Директория для выгрузки файлов:";
+    }
+
     ColumnLayout
     {
         id: horizIFC_Col_text;
         x: 30;
-        anchors.topMargin: 10;
-        anchors.top: cbIFC.bottom;
+        anchors.topMargin: 5;
+        anchors.top: labelSelectDir.bottom;
         LabelALDE
         {
             id: labelIFCPath;
@@ -810,8 +833,8 @@ Rectangle
         {
             id: btnBrowseFolder;
             text: "...";
-            /* width: 15;
-            height: 15; */
+            ToolTip.text: "Нажмите, чтобы выбрать директорию для экспорта";
+            ToolTip.visible: hovered;
             onClicked:
             {
                 selectDirectoryDialog.open();
@@ -820,7 +843,7 @@ Rectangle
     }
 /******************************* Industry Foundation Classes **********************************/
 
-/************************************************ Версия IFC **********************************/
+/************************************************ Версия IFC **********************************
 
     Row
     {
@@ -830,6 +853,7 @@ Rectangle
         anchors.left: borderRect.left;
         anchors.topMargin: 5;
 
+        /* rib 2.12.25 создано отд.поле для json, в кот. указ. верс. IFC
         LabelALDE
         {
             id: labelIFCVersion;
@@ -837,7 +861,7 @@ Rectangle
             text: "Задать файл конфигурации .json и версию IFC:";
         }
 
-        /* 24.04.2025 Выбор версии IFC перенесен в отд. программу/окно
+        /* rib 24.04.2025 Выбор версии IFC перенесен в отд. программу/окно
         ComboBox
         {
             id: cbIFCVersion;
@@ -863,8 +887,8 @@ Rectangle
                 ListElement { text: "IFC4RV"    }
             }
         }
-        */
 
+        /* rib 2.12.25 создано отд.поле для json, в кот. указ. верс. IFC
         RoundButton
         {
             id: btnIFCSettings;
@@ -892,8 +916,8 @@ Rectangle
         id: cbNavi;
         objectName: "cbNavi";
         enabled: itemsEnabled;
-        anchors.top: hRow.bottom;
-        anchors.topMargin: 40;
+        anchors.top: btnBrowseFolderCol.bottom;
+        anchors.topMargin: 30;
         x: 35
         checked: true;
         text: "Navisworks";
@@ -956,7 +980,7 @@ Rectangle
     FolderDialog
     {
         id: selectDirectoryDialog;
-        title: "Выберите папку для экспорта";
+        title: "Выберите директорию для экспорта";
         onAccepted:
         {
             var path = selectDirectoryDialog.selectedFolder.toString();
