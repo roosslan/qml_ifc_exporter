@@ -314,7 +314,7 @@ void BackEnd::slot_is_file_exists(QString fname, const QString& rvt_version)
     const QQuickItem* lv_main = m_item->findChild<QQuickItem*>("o_lvMain");
     QObject* list_model = lv_main->children()[1];
 
-    /* После закрытия общего доступа к папке по сети, замены в RSN:// неактуальны */
+    /* После закрытия общего доступа к папке по сети, замены в RSN:// неактуальны
     if (fname.startsWith("RSN://"))
     {
         fname.replace("RSN://", "\\\\");
@@ -322,7 +322,7 @@ void BackEnd::slot_is_file_exists(QString fname, const QString& rvt_version)
         const QString server_name = fname.mid(2, spos-2);
         fname.replace("\\\\" + server_name + "/", "\\\\" + server_name + "\\Revit23\\");
     }
-    else if (QFile::exists(fname)){ };
+    else if (QFile::exists(fname)){ }; */
 
     QVariant returned_value;
     const QVariant bool_msg = true;

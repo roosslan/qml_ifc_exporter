@@ -729,6 +729,7 @@ Rectangle
                 id: revitVersion;
                 ListElement { text: "2022" }
                 ListElement { text: "2023" }
+                ListElement { text: "2026" }
             }
         }
     }
