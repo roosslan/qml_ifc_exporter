@@ -1,3 +1,5 @@
+/* last changed 24.4.2026 */
+
 #ifndef BACKEND_H
 #define BACKEND_H
 
@@ -56,14 +58,12 @@ private slots:
     void read_socket();
     void discard_socket();
     void display_error(QAbstractSocket::SocketError socket_error);
-    void display_message(const QString& qstr_msg);
+    void display_log_message(const QString& qstr_msg);
 
 public:    
     BackEnd(QGuiApplication *parent, QObject* item, HWND hwnd);
     ~BackEnd();
     QString inf_file = m_app_data_ + "\\alabuga_dev\\bimalde.inf";
-    QString views_file = m_app_data_ + "\\alabuga_dev\\rvt_views.txt";
-    QString sites_file = m_app_data_ + "\\alabuga_dev\\rvt_sites.txt";
     QString views_and_sites_file = m_app_data_ + "\\alabuga_dev\\views_sites.sav";
 
     /* Для DeleteInfSection */

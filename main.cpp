@@ -31,8 +31,8 @@ int main (int argc, char* argv[])
     if( !shared.create( 512, QSharedMemory::ReadWrite) )
     {
         QLibrary qLib;
-        char win_NameWin[] = "BIMALDE - IFC exporter", win_MessageWin[] = "IFC exporter is already opened";
-        int iResult = 0x00;
+        char win_name_win[] = "IFC exporter", win_message_win[] = "IFC exporter is already opened";
+        int res = 0x00;
         bool unLoad = false;
 
         qLib.setFileName("user32");
@@ -43,7 +43,7 @@ int main (int argc, char* argv[])
                 pMessageBox MessageBoxA = (pMessageBox)qLib.resolve("MessageBoxA");
 
                 if(MessageBoxA)
-                    iResult = MessageBoxA(nullptr, &win_MessageWin[0x00], &win_NameWin[0x00], 0x40);
+                    res = MessageBoxA(nullptr, &win_message_win[0x00], &win_name_win[0x00], 0x40);
 
                 MessageBoxA = nullptr;
                 unLoad = qLib.unload();
@@ -52,7 +52,7 @@ int main (int argc, char* argv[])
     }
 
     /* Передаём процесс в заголовок окна IFC exporter */
-    QString pID = "BIMALDE - IFC exporter ";
+    QString pID = "IFC exporter ";
     try {
         pID += argv[1];
     }

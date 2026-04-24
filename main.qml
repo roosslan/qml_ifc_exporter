@@ -1,3 +1,8 @@
+/*
+  - rir 18.2.2026
+  - last changed 24.4.2026
+ */
+
 import QtQuick
 import "shared/"
 import QtQuick.Dialogs
@@ -285,12 +290,12 @@ Rectangle
         y: 10;
         anchors.margins: 10;
         anchors.left: borderRect.right;
-        width : 460;
+        width : 470;
         height: 840;
         color: "white";
 
         lBorderwidth: 1;
-        rBorderwidth: 1;
+        rBorderwidth: 0;
         tBorderwidth: 1;
         bBorderwidth: 1;
         borderColor: "black";
@@ -521,16 +526,26 @@ Rectangle
         anchors.top: logFrame.top;
         anchors.margins: 10;
         anchors.left: logFrame.left;
-        height: 750;
-        width: 600;
+        height: 760;
+        width: 490;
         objectName: "o_lvLog";
+        clip: true; /* Чтобы динамически создаваемые контролы не вылезали за пределы ListView */
 
-        /*ScrollBar.horizontal: visible;
 
-        /* ScrollBar {}
+        ScrollBar.horizontal:  ScrollBar {
+            id: hscroll_bar;
+            active: ScrollBar.AlwaysOn;
+            policy: ScrollBar.AlwaysOn;
+            width: 5;
+            anchors {
+                right: lvLog.right;
+                bottom: lvLog.bottom;
+            }
+        }
         flickableDirection: Flickable.HorizontalAndVerticalFlick;
-        contentWidth: 1000;
-        */
+        contentWidth: 3000;
+
+
         delegate:
             Text
             {
@@ -547,7 +562,7 @@ Rectangle
                 msg: "";
             }
 
-            function addRow(caption)
+            function add_to_log_listview(caption)
             {
                 lmLogModel.append({"msg": new Date().toLocaleTimeString() + " " +caption});
             }

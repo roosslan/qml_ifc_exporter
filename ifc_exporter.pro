@@ -1,3 +1,5 @@
+# last changed 18.2.2026
+
 TARGET = ifc_exporter
 
 TEMPLATE = app
@@ -13,10 +15,9 @@ static {
     message("Static build.")
 }
 
-INCLUDEPATH += "C:/Program Files (x64)/Qt/6.10.0/msvc2022_64/include"
-SOURCES += main.cpp \
-    backend.cpp \
-    localsocketipcclient.cpp
+INCLUDEPATH += C:\Program Files (x64)\Qt\6.10.0\msvc2022_64\include
+
+
 RESOURCES += \
     ifc_exporter.qrc \
     shared\shared.qrc
@@ -28,9 +29,13 @@ RC_ICONS = resources/icon.ico
 ICON = resources/icon.ico
 win32: RC_FILE = resources/ifc_exporter.rc
 
+SOURCES += main.cpp \
+    backend.cpp \
+    named_pipe_client.cpp
+
 HEADERS += \
     backend.h \
-    localsocketipcclient.h \
+    named_pipe_client.h \
     resources/ifc_exporter.rc
 
 DISTFILES += \

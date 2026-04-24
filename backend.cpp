@@ -1,3 +1,5 @@
+/* last change 24.4.2026, removed 60-chars dividing */
+
 #include "backend.h"
 #include <QCheckbox>
 #include <QNetworkInterface>
@@ -10,7 +12,7 @@
 #include <QtCore/qabstractitemmodel.h>
 #include <QThread>
 #include <sstream>
-#include "localsocketipcclient.h"
+#include "named_pipe_client.h"
 
 /*
 void BackEnd::slot_btn_ifc_settings_clicked()
@@ -62,7 +64,7 @@ BackEnd::BackEnd(QGuiApplication *parent, QObject* item, HWND hwnd)
     else
     {
         qDebug() << "QTcp server started";
-        connect(this, &BackEnd::new_message, this, &BackEnd::display_message);
+        connect(this, &BackEnd::new_message, this, &BackEnd::display_log_message);
         connect(m_server, &QTcpServer::newConnection, this, &BackEnd::new_socket_connection);
     }
 }
@@ -85,9 +87,8 @@ void BackEnd::append_to_socket_list(QTcpSocket* socket)
     connect(socket, &QTcpSocket::disconnected, this, &BackEnd::discard_socket);
     connect(socket, &QAbstractSocket::errorOccurred, this, &BackEnd::display_error);
 
-    display_message(QString("| Подготовка к выгрузке ") + QString::fromStdString(m_str_hwnd));
-    display_message(QString("| Фоновой процесс %1 запуска Revit подключен!").arg(socket->socketDescriptor()));
-/*  socket->write("Sending msg to bgHelper");  */
+    display_log_message(QString("| Подготовка к выгрузке ") + QString::fromStdString(m_str_hwnd));
+    display_log_message(QString("| Фоновой процесс %1 запуска Revit подключен!").arg(socket->socketDescriptor()));
 }
 
 void BackEnd::discard_socket()
@@ -109,12 +110,17 @@ void BackEnd::read_socket()
     qDebug() << "bg | " << QString(qmessage);
 
     const std::string display_log_msg = QString(qmessage).toStdString();
+
+    display_log_message("bgHelper | " + QString::fromStdString(display_log_msg));
+
     const int charCount = 60;  /* split 60 chars */
+    /*
     for (size_t i = 0; i < display_log_msg.length(); i += charCount)
     {
         const std::string to_display_str = display_log_msg.substr(i, charCount);
-        display_message("bgHelper | " + QString::fromStdString(to_display_str));
+        display_log_message("bgHelper | " + QString::fromStdString(to_display_str));
     }
+    */
 }
 
 void BackEnd::display_error(QAbstractSocket::SocketError socket_error)
@@ -135,13 +141,14 @@ void BackEnd::display_error(QAbstractSocket::SocketError socket_error)
     }
 }
 
-void BackEnd::display_message(const QString& qstr_msg)
+/* Adds and displays a message in the LOG listbox */
+void BackEnd::display_log_message(const QString& qstr_msg)
 {
     const QQuickItem* lv_log = m_item->findChild<QQuickItem*>("o_lvLog");
     QObject* lm_log = lv_log->children()[1];
     QVariant returned_value;
     const QVariant lm_msg = qstr_msg;
-    QMetaObject::invokeMethod(lm_log, "add_row",  /* add_row function defined in QML-file */
+    QMetaObject::invokeMethod(lm_log, "add_to_log_listview",  /* add_row function defined in QML-file */
                               Q_RETURN_ARG(QVariant, returned_value),
                               Q_ARG(QVariant, lm_msg));
 
@@ -219,6 +226,7 @@ QKeysValues BackEnd::get_section_keys_and_values(const QString& section_name)
     QKeysValues rret;
     m_config_file_.SetUnicode();
 
+    qDebug() << "Checking if the section [SourceDisksFiles] exists in the .inf file";
     const SI_Error rc = m_config_file_.LoadFile(inf_file.toStdString().c_str());
     if(!m_config_file_.SectionExists(section_name.toStdWString().c_str())){
         const QKeysValues qkv_nullptr_list = {};
@@ -387,7 +395,7 @@ void BackEnd::slot_run_clicked(const int right_now, const QString& utime, const 
 
     if(right_now)    /* Запустить ПРЯМО сейчас! == 1 */
     {
-        LocalSocketIpcClient* local_pipe = new LocalSocketIpcClient("\\\\.\\pipe\\bghelperpipe", this);
+        pipe_client* local_pipe = new pipe_client("\\\\.\\pipe\\bghelperpipe", this);
         local_pipe->send_message_to_server("START_IMMEDIATELY");
     }
 }
