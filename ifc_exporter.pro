@@ -31,10 +31,12 @@ win32: RC_FILE = resources/ifc_exporter.rc
 
 SOURCES += main.cpp \
     backend.cpp \
+    helper_funcs.cpp \
     named_pipe_client.cpp
 
 HEADERS += \
     backend.h \
+    helper_funcs.h \
     named_pipe_client.h \
     resources/ifc_exporter.rc
 

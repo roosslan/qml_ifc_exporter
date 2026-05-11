@@ -13,17 +13,9 @@
 #include <QThread>
 #include <sstream>
 #include "named_pipe_client.h"
+#include "helper_funcs.h"
 
 /*
-void BackEnd::slot_btn_ifc_settings_clicked()
-{
-    Передаем окну IFCSettings наш handle, чтобы ifc_settings показался модально
-    QStringList args;
-
-    args.append(QString::fromStdString(m_str_hwnd));
-    QProcess::startDetached("ifcsettings.exe", args);
-}
-
 std::list<QString> BackEnd::get_all_keys_of_section(const QString section_name)
 {
     std::list<QString> rret;
@@ -56,7 +48,7 @@ BackEnd::BackEnd(QGuiApplication *parent, QObject* item, HWND hwnd)
     m_server = new QTcpServer(this);
     m_server->moveToThread(q_thread);
 
-    if (!m_server->listen(QHostAddress::Any, 6667))
+    if (!m_server->listen(QHostAddress::Any, 7777))
     {
         qDebug() << "Unable to start QTcp server: " << m_server->errorString();
         m_server->close();
@@ -95,7 +87,7 @@ void BackEnd::discard_socket()
 {
     QTcpSocket* q_socket = reinterpret_cast<QTcpSocket*>(sender());
     const QSet<QTcpSocket*>::iterator it = m_connection_set_.find(q_socket);
-    if (it != m_connection_set_.end()){
+    if (it != m_connection_set_.end()) {
 /*      displayMessage(QString("INFO :: A client : %1 has just left").arg(socket->socketDescriptor())); */
         m_connection_set_.remove(*it);
     }
@@ -107,20 +99,23 @@ void BackEnd::read_socket()
 {
     QTcpSocket* q_socket = reinterpret_cast<QTcpSocket*>(sender());
     QByteArray qmessage = q_socket->readAll(); // Read message
-    qDebug() << "bg | " << QString(qmessage);
 
-    const std::string display_log_msg = QString(qmessage).toStdString();
-
-    display_log_message("bgHelper | " + QString::fromStdString(display_log_msg));
-
-    const int charCount = 60;  /* split 60 chars */
-    /*
-    for (size_t i = 0; i < display_log_msg.length(); i += charCount)
-    {
-        const std::string to_display_str = display_log_msg.substr(i, charCount);
-        display_log_message("bgHelper | " + QString::fromStdString(to_display_str));
+    if(QString(qmessage).startsWith("EXPORT_REMOTE_FILE")){
+        export_remote_sav_file(QString(qmessage));
     }
-    */
+    else {
+        qDebug() << "bg | " << QString(qmessage);
+
+        const std::string display_log_msg = QString(qmessage).toStdString();
+
+        display_log_message("bgHelper | " + QString::fromStdString(display_log_msg));
+    }
+}
+
+void BackEnd::export_remote_sav_file(const QString &remote_file_path_for_export)
+{
+    /* Ищем файл .sav с именем данного компьютера */
+    display_log_message("remote | Получена команда экспортировать список файлов с сервера! Ищу файл L:\\99_IT\\00_ifc_export\\" + QHostInfo::localHostName() + ".sav");
 }
 
 void BackEnd::display_error(QAbstractSocket::SocketError socket_error)
@@ -295,16 +290,127 @@ void BackEnd::slot_save_views_and_sites_to_file(const QString& fname, const QStr
         /* Если AppendMode == 0, то создаем файл заново */
         if (append_mode)
             write_mode = QIODevice::Append;
-        if (sav_file.open(write_mode)) {
+        if (fname != "" && sav_file.open(write_mode)) {
             QTextStream text_stream(&sav_file);
             text_stream << fname.trimmed() << " = " << view_name.trimmed() << " = " << site_name.trimmed() << " = " << output_file_name.trimmed() << " = " << json_file_path.trimmed() << " = " << bool2str(should_be_exported) << "\n";
             sav_file.close();
         }
     }
+    remove_duplicate_lines_from_file(views_and_sites_file.toStdString());
 }
 
-void BackEnd::slot_is_file_exists(QString fname, const QString& rvt_version)
-{
+void BackEnd::on_sav_combo_changed(int index, const QString &file_name, const QString &full_path){
+    qDebug() << "Index: " << index << " Filename: " << file_name << " Path: " << full_path;
+    QVariant returned_value;
+
+    QString sav_path = "";
+    /* Если fullpath пустой, значит просто выбрали другую позицию в combobox'e */
+    if (full_path == "") {
+        sav_path = QString::fromStdString(get_fullpath_by_filename(v_sav_files, file_name));
+    }
+
+    if (sav_path != "")
+    try {
+        views_and_sites_file = sav_path;
+
+        v_sav_files.push_back(sav_path.toStdString());
+        QUuid random_guid = QUuid::createUuid();
+        QString key_name = random_guid.toString();
+
+        write_inf_string("Manufacturer", "sav_file_for_export", sav_path);
+        write_inf_string("SourceDisksNames.amd64", key_name, sav_path);
+
+        load_sav_file_into_main_list(views_and_sites_file);
+    }
+    catch(std::exception ex){
+        qDebug() << ex.what();
+    }
+}
+
+void BackEnd::load_sav_file_into_main_list(const QString &sav_file){
+
+    QVariant returned_value;
+    QMetaObject::invokeMethod(m_item, "clear_main_list",
+                              Q_RETURN_ARG(QVariant, returned_value));
+
+    const QKeysValues v_files_list = get_section_keys_and_values("SourceDisksFiles");
+    to_restore line_to_restore;
+    const std::vector<to_restore> v_views_n_sites = get_all_keys_and_values_of_file(sav_file);
+
+    int list_index_to_add = -1;
+
+    if (!v_files_list.empty())
+        foreach (const auto qpair, v_files_list) { /* first - fname, second - bool_as_str "should_be_exported?" */
+            /* Добавляем в список обыкновенные RVT, без вьюх и площадок */
+            const auto it = std::find_if(v_views_n_sites.begin(), v_views_n_sites.end(),
+                                         [&qpair](const to_restore& item) {
+                                             return item.fname == qpair.first; /* fname */
+                                         });
+            if (it == v_views_n_sites.end())
+            {
+                auto fname = qpair.first;
+                bool should_exported = str2bool(qpair.second);
+                QMetaObject::invokeMethod(m_item, "add_row_from_cpp",
+                                          Q_RETURN_ARG(QVariant, returned_value),
+                                          Q_ARG(const QString&, fname),
+                                          Q_ARG(const bool,    should_exported));
+                ++list_index_to_add;
+            }
+        }
+
+    QString last_added_fname = "";
+    /* Добавляем в список всё остальное, эти файлы уже с указанными вьюхами или площадками */
+    if(!v_views_n_sites.empty())
+        foreach (const auto line_to_restore, v_views_n_sites)
+        {
+            if (last_added_fname == line_to_restore.fname)
+                QMetaObject::invokeMethod(m_item, "add_subrow_wrapper",
+                                          Q_RETURN_ARG(QVariant, returned_value),
+                                          Q_ARG(const int, list_index_to_add),
+                                          Q_ARG(const QString, line_to_restore.view),
+                                          Q_ARG(const QString, line_to_restore.site),
+                                          Q_ARG(const QString, line_to_restore.outputfname),
+                                          Q_ARG(const QString, line_to_restore.jsonpath));
+            else
+            {
+                ++list_index_to_add;
+                QMetaObject::invokeMethod(m_item, "add_row_w_subrows_from_cpp",
+                                          Q_RETURN_ARG(QVariant, returned_value),
+                                          Q_ARG(const int, list_index_to_add),
+                                          Q_ARG(const QString, line_to_restore.fname),
+                                          Q_ARG(const QString, line_to_restore.view),
+                                          Q_ARG(const QString, line_to_restore.site),
+                                          Q_ARG(const QString, line_to_restore.outputfname),
+                                          Q_ARG(const QString, line_to_restore.jsonpath),
+                                          Q_ARG(const bool,    line_to_restore.should_exported));
+
+            }
+            last_added_fname = line_to_restore.fname;
+        }
+}
+
+void BackEnd::fill_combobox_sav_files(){
+    QVariant returned_value;
+    /* sav'ы добавляем в выпадающий список */
+    m_config_file_.SetUnicode();
+    SI_Error rc = m_config_file_.LoadFile(inf_file.toStdString().c_str());
+    QString section_name = "SourceDisksNames.amd64";
+
+    const CSimpleIniW::TKeyVal* sav_files = m_config_file_.GetSection(section_name.toStdWString().c_str());
+    auto sav_map = sav_files[0];
+    for (const auto& item : sav_map){
+        const wchar_t* ws_sav_file_path = static_cast<const wchar_t*>(item.second);
+        QString sav_file_path = QString::fromWCharArray(ws_sav_file_path);
+
+        v_sav_files.push_back(sav_file_path.toStdString());
+        const QFileInfo fi(sav_file_path);
+        QMetaObject::invokeMethod(m_item, "add_item_cb_files_sav",
+                                  Q_RETURN_ARG(QVariant, returned_value),
+                                  Q_ARG(const QString&, fi.fileName()));
+    }
+}
+
+void BackEnd::slot_is_file_exists(QString fname, const QString& rvt_version){
     QStringList args;
     args.append(fname);
     args.append(rvt_version);
@@ -390,6 +496,7 @@ void BackEnd::slot_run_clicked(const int right_now, const QString& utime, const 
         qDebug() << "Getting *.RVT files list is failed!";
     }
 
+    views_and_sites_file = read_inf_string("Manufacturer", "sav_file_for_export");
     write_inf_string("ControlFlags", "Enabled", "true");
     qDebug() << "The control flag 'Enabled' was set to true";
 
@@ -442,5 +549,13 @@ void bgMessageHandler(QtMsgType type, const QMessageLogContext &, const QString 
     }
 }
 
+/*
+void BackEnd::slot_btn_ifc_settings_clicked()
+{
+    Передаем окну IFCSettings наш handle, чтобы ifc_settings показался модально
+    QStringList args;
 
-
+    args.append(QString::fromStdString(m_str_hwnd));
+    QProcess::startDetached("ifcsettings.exe", args);
+}
+*/

@@ -87,6 +87,9 @@ int main (int argc, char* argv[])
     BackEnd backend_rula(&qgui_app, item, (HWND)q_view.winId());
     q_view.backend_ruler = &backend_rula;
 
+    /* Передаем экземпляр класса в Qml: */
+    q_view.rootContext()->setContextProperty("backend", &backend_rula);
+
     QObject::connect(item, SIGNAL(signal_esc_key_pressed()), &backend_rula, SLOT(slot_esc_pressed()));
     QObject::connect(item, SIGNAL(signal_stop_clicked()), &backend_rula, SLOT(slot_stop_clicked()));
     QObject::connect(item, SIGNAL(signal_copy_to_clipboard_clicked()), &backend_rula, SLOT(slot_copy_to_clipboard_pressed()));
@@ -103,6 +106,8 @@ int main (int argc, char* argv[])
     QQuickItem* qquick_text_ifc_path = item->findChild<QQuickItem*>("text_IFCPath");
     qquick_text_ifc_path->setProperty("text", export_directory);
 
+    backend_rula.fill_combobox_sav_files();
+
    /* Следующий код передает в QML системные переменные наподобие $APPDATA */
     item->setProperty("home_directory", QDir::homePath());
 
@@ -117,60 +122,8 @@ int main (int argc, char* argv[])
     q_view.setMaximumWidth(window_width);
     q_view.setMinimumWidth(window_width);
 
-    const QKeysValues v_files_list = backend_rula.get_section_keys_and_values("SourceDisksFiles");
-    to_restore line_to_restore;
-    const std::vector<to_restore> v_views_n_sites = backend_rula.get_all_keys_and_values_of_file(backend_rula.views_and_sites_file);
+    backend_rula.write_inf_string("Manufacturer", "sav_file_for_export", backend_rula.views_and_sites_file);
+    backend_rula.load_sav_file_into_main_list(backend_rula.views_and_sites_file);
 
-    int list_index_to_add = -1;
-    QVariant returned_value;
-
-    if (!v_files_list.empty())
-    foreach (const auto qpair, v_files_list) { /* first - fname, second - bool_as_str "should_be_exported?" */
-         /* Добавляем в список обыкновенные RVT, без вьюх и площадок */
-        const auto it = std::find_if(v_views_n_sites.begin(), v_views_n_sites.end(),
-                     [&qpair](const to_restore& item) {
-                         return item.fname == qpair.first; /* fname */
-            });
-        if (it == v_views_n_sites.end())
-        {
-            auto fname = qpair.first;
-            bool should_exported = backend_rula.str2bool(qpair.second);
-            QMetaObject::invokeMethod(item, "add_row_from_cpp",
-                                        Q_RETURN_ARG(QVariant, returned_value),
-                                        Q_ARG(const QString&, fname),
-                                        Q_ARG(const bool,    should_exported));
-            ++list_index_to_add;
-         }
-    }
-
-    QString last_added_fname = "";
-    /* Добавляем в список всё остальное, эти файлы уже с указанными вьюхами или площадками */
-    if(!v_views_n_sites.empty())
-    foreach (const auto line_to_restore, v_views_n_sites)
-    {
-        if (last_added_fname == line_to_restore.fname)
-            QMetaObject::invokeMethod(item, "add_subrow_wrapper",
-                                        Q_RETURN_ARG(QVariant, returned_value),
-                                        Q_ARG(const int, list_index_to_add),
-                                        Q_ARG(const QString, line_to_restore.view),
-                                        Q_ARG(const QString, line_to_restore.site),
-                                        Q_ARG(const QString, line_to_restore.outputfname),
-                                        Q_ARG(const QString, line_to_restore.jsonpath));
-        else
-        {
-            ++list_index_to_add;
-            QMetaObject::invokeMethod(item, "add_row_w_subrows_from_cpp",
-                                        Q_RETURN_ARG(QVariant, returned_value),
-                                        Q_ARG(const int, list_index_to_add),
-                                        Q_ARG(const QString, line_to_restore.fname),
-                                        Q_ARG(const QString, line_to_restore.view),
-                                        Q_ARG(const QString, line_to_restore.site),
-                                        Q_ARG(const QString, line_to_restore.outputfname),
-                                        Q_ARG(const QString, line_to_restore.jsonpath),
-                                        Q_ARG(const bool,    line_to_restore.should_exported));
-
-        }
-        last_added_fname = line_to_restore.fname;
-    }
     return qgui_app.exec ();
 }

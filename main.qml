@@ -30,6 +30,9 @@ property int top_offset: 10;
 property var id_row_additional_fields;
 property var rows_array: [{ str_hwnd: "", hwnd: QtObject, lv_row_index: 0, arrf_file_path: "", arrf_3dview_name: "",
         arrf_site_name: "", arrf_output_file_name: "", arrf_json_path: "", arrf_should_be_exported: true }];
+property var empty_array_structure: [{ str_hwnd: "", hwnd: QtObject, lv_row_index: 0, arrf_file_path: "", arrf_3dview_name: "",
+        arrf_site_name: "", arrf_output_file_name: "", arrf_json_path: "", arrf_should_be_exported: true }];
+
 property string home_directory: "";
 property string selectedDate: new Date().toLocaleString(Qt.locale(),"dd.MM.yyyy");
 
@@ -53,6 +56,16 @@ function stop_clicked()
     signal_stop_clicked();
     lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Процесс закрыт"});
     items_enabled = true;
+}
+
+function clear_main_list(){
+    rows_array = empty_array_structure;
+    listModel.clear();
+}
+
+function add_item_cb_files_sav(sav_file_name: string)
+{
+    model_sav_file.append( { "text": sav_file_name} );
 }
 
 function add_subrow_wrapper(lvMainRowId: int, _3dview_Text: string, site_Text: string, fNameText: string, JSON_text: string)
@@ -715,23 +728,20 @@ Rectangle
 
 
 /************************************* Версия Revit ******************************************/
-    Row
-    {
+    Row {
         id: horizRow;
         objectName: "row_RvtVersion";
         anchors.top: labelExportSettings.bottom;
         anchors.left: borderRect.left;
         anchors.topMargin: 5;
 
-        LabelALDE
-        {
+        LabelALDE {
             id: labelRevitVersion;
             anchors.top: labelExportSettings.bottom;
             text: "Версия Revit:";
         }
 
-        ComboBox
-        {
+        ComboBox {
             id: cbVersion;
             editable: false;
             enabled: items_enabled;
@@ -739,18 +749,108 @@ Rectangle
             anchors.leftMargin: 10;
             anchors.top: labelExportSettings.bottom;
             currentIndex: 1;
-            model: ListModel
-            {
+            model: ListModel {
                 id: revitVersion;
                 ListElement { text: "2022" }
                 ListElement { text: "2023" }
                 ListElement { text: "2026" }
             }
         }
+
+/****************************************** sav-файл ******************************************/
+
+        LabelALDE {
+            id: label_sav_file;
+            anchors.top: labelExportSettings.bottom;
+            anchors.leftMargin: 110;
+            anchors.left: cbVersion.right;
+            text: "Файл выгрузки:";
+        }
+
+        ComboBox {
+            id: cb_sav_file;
+            objectName: "cb_sav_file";
+            editable: false;
+            enabled: items_enabled;
+            anchors.left: label_sav_file.right;
+            anchors.leftMargin: 10;
+            anchors.top: labelExportSettings.bottom;
+            currentIndex: 0;
+            width: 240;
+            model: ListModel {
+                id: model_sav_file;
+                objectName: "model_sav_file";
+                ListElement { text: "views_sites.sav" }
+            }
+            onCountChanged: {
+                    backend.on_sav_combo_changed(currentIndex, currentValue, "");
+                }
+            onActivated: {
+                    backend.on_sav_combo_changed(currentIndex, currentValue, "");
+                }
+        }
+
+        Image {
+            id: the_plus_image;
+            source: "resources/plus.png";
+            enabled: items_enabled;
+            anchors.left: cb_sav_file.right;
+            anchors.top: labelExportSettings.bottom;
+            anchors.leftMargin: 10;
+            width: 15;
+            height: 15;
+            MouseArea
+            {
+                anchors.fill: parent;
+                onClicked:
+                {
+                   sav_file_choose_dialog.open();
+                }
+            }
+        }
+
+        Image {
+            id: img_recyclebin;
+            source: "resources/recycle_bin.png";
+            enabled: false;
+            anchors.left: the_plus_image.right;
+            anchors.top: labelExportSettings.bottom;
+            anchors.leftMargin: 10;
+            width: 15;
+            height: 15;
+            MouseArea {
+                anchors.fill: parent;
+                onClicked: {
+                   //cb_sav_file.
+                }
+            }
+        }
+
+        FileDialog {
+            id: sav_file_choose_dialog;
+            title: "Please choose a sav-file";
+            nameFilters: [".sav-files (*.sav)"];
+            onAccepted:
+            {
+                var path = sav_file_choose_dialog.selectedFile.toString();
+                // remove prefixed "file:///"
+                path = path.replace(/^(file:\/{3})/,"");
+                // unescape html codes like '%23' for '#'
+                var file_name = path.toString().split('/').pop();
+
+                if (cb_sav_file.find(file_name) !== -1) {
+                    lmLogModel.add_to_log_listview("| Файл с таким именем уже был ранее добавлен в список!");
+                }
+                else {
+                    model_sav_file.append( { "text": decodeURIComponent(file_name) } );
+                    sav_file_choose_dialog.selectedFile = "";
+                    sav_file_choose_dialog.close();
+                    cb_sav_file.currentIndex = cb_sav_file.count - 1;
+                    backend.on_sav_combo_changed(cb_sav_file.currentIndex, cb_sav_file.currentValue, path);
+                }
+            }
+        }
     }
-/************************************* Версия Revit ******************************************/
-
-
 /************************************* Время/Дата выгрузки ****************************************/
     Row
     {
@@ -1000,7 +1100,7 @@ Rectangle
         anchors.top: btnBrowseFolderCol.bottom;
         anchors.topMargin: 30;
         x: 35
-        checked: true;
+        checked: false;
         text: "Navisworks";
         onCheckedChanged:
         {
