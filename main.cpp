@@ -96,7 +96,7 @@ int main (int argc, char* argv[])
 
     QObject::connect(item, SIGNAL(signal_run_clicked(const int, const QString&, const QString&)), &backend_rula, SLOT(slot_run_clicked(const int, const QString&, const QString&)));
 
-    QObject::connect(item, SIGNAL(signal_is_file_exists(const QString&, const QString&)), &backend_rula, SLOT(slot_is_file_exists(const QString&, const QString&)));
+    QObject::connect(item, SIGNAL(signal_clear_log_files()), &backend_rula, SLOT(slot_clear_log_files()));
 
     QObject::connect(item, SIGNAL(signal_save_views_and_sites_to_file(const QString&, const QString&, const QString&, const QString&, const QString&, const bool, const int)),
                      &backend_rula, SLOT(slot_save_views_and_sites_to_file(const QString&, const QString&, const QString&, const QString&, const QString&, const bool, const int)));
@@ -123,6 +123,7 @@ int main (int argc, char* argv[])
     q_view.setMinimumWidth(window_width);
 
     backend_rula.write_inf_string("Manufacturer", "sav_file_for_export", backend_rula.views_and_sites_file);
+    backend_rula.v_sav_files.push_back(backend_rula.views_and_sites_file.toStdString());
     backend_rula.load_sav_file_into_main_list(backend_rula.views_and_sites_file);
 
     return qgui_app.exec ();

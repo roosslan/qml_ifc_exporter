@@ -11,15 +11,15 @@ void remove_duplicate_lines_from_file(const std::string& file_path) {
     std::unordered_set<std::string> seen_lines;
     std::string line;
 
-    // Step 1: Read all unique lines into memory while preserving order
+    /* Считываем все уникальные строки в память */
     while (std::getline(input_file, line)) {
         if (seen_lines.insert(line).second) {
             unique_lines.push_back(line);
         }
     }
-    input_file.close(); // Essential: Close the file before reopening to write
+    input_file.close();
 
-    // Step 2: Overwrite the original file with the unique lines
+    /* Заменяем оригинальный файл, оставляя в нем только уникальные строчки */
     std::ofstream output_file(file_path, std::ios::trunc); // std::ios::trunc clears the file
     if (!output_file.is_open()) {
         std::cerr << "Error: Could not open file for writing!" << std::endl;
@@ -30,6 +30,18 @@ void remove_duplicate_lines_from_file(const std::string& file_path) {
         output_file << uniqueLine << "\n";
     }
     output_file.close();
+}
+
+QString get_env(const std::string &env_var){
+    QString rret = "";
+    char* buf = nullptr;
+    size_t sz = 0;
+    if (_dupenv_s(&buf, &sz, env_var.c_str()) == 0 && buf != nullptr)
+    {
+        rret = buf;
+        free(buf);
+    }
+    return rret;
 }
 
 std::string to_lower(const std::string& str) {
@@ -49,3 +61,4 @@ std::string get_fullpath_by_filename(const std::list<std::string>& v_full_paths,
 
     return (it != v_full_paths.end()) ? *it : "";
 }
+

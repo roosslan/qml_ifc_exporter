@@ -1,11 +1,12 @@
-# last changed 18.2.2026
+# last changed 12.5.2026
 
 TARGET = ifc_exporter
 
 TEMPLATE = app
 
 QT += quick qml widgets core gui quickcontrols2
-CONFIG += static
+CONFIG += c++20 \
+    static
 static {
 # Everything below takes effect with CONFIG += static
     CONFIG += static
@@ -15,8 +16,8 @@ static {
     message("Static build.")
 }
 
-INCLUDEPATH += C:\Program Files (x64)\Qt\6.10.0\msvc2022_64\include
-
+INCLUDEPATH += C:\Program Files (x64)\Qt\6.10.0\msvc2022_64\include \
+                C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC\14.44.35207\include
 
 RESOURCES += \
     ifc_exporter.qrc \

@@ -4,6 +4,7 @@
 #define BACKEND_H
 
 #include "simpleini.h"
+#include "helper_funcs.h"
 #include <windows.h>
 
 #include <qqml.h>
@@ -38,14 +39,14 @@ class BackEnd : public QObject
 {
     Q_OBJECT
     QML_ELEMENT
-    QGuiApplication* m_window;
+    QGuiApplication* m_window_;
     QTcpSocket m_tcp_socket_;
     QObject *m_item;
-    HWND m_hwnd;
-    std::string m_str_hwnd; /* Для передачи в окно IFCSettings */
+    HWND m_hwnd_;
+    std::string m_str_hwnd_; /* Для передачи в окно IFCSettings */
     QTcpServer* m_server;
-    std::list<std::string> v_sav_files;
-    QString m_app_data_ = getenv("appdata");
+
+    QString m_app_data_ = get_env("appdata");
 
     /* Так как все INI-файлы для WritePrivateProfileStringW всегда ANSI, пишем сами - как UTF8 с русскими символами */
     CSimpleIniW m_config_file_;
@@ -66,26 +67,28 @@ public:
     ~BackEnd();
     QString inf_file = m_app_data_ + "\\alabuga_dev\\bimalde.inf";
     QString views_and_sites_file = m_app_data_ + "\\alabuga_dev\\views_sites.sav";
+    std::list<std::string> v_sav_files;
     void fill_combobox_sav_files();
     void load_sav_file_into_main_list(const QString &sav_file);
-    void export_remote_sav_file(const QString &remote_file_path_for_export);
-    /* Для DeleteInfSection */
-    LPCWSTR inf_name = (const wchar_t*) inf_file.utf16();
-    Q_INVOKABLE void on_sav_combo_changed(int index, const QString &file_name, const QString &full_path);
-    QString read_inf_string(const QString& section_name, const QString& key_name);
+    Q_INVOKABLE void on_sav_combo_changed(int index, const QString &file_name, QString full_path);
 
     const bool str2bool(const QString& bool_as_str);
 
+    /* Для DeleteInfSection */
+    LPCWSTR inf_name = (const wchar_t*) inf_file.utf16();
+
     QKeysValues get_section_keys_and_values(const QString& section_name);
     std::vector<to_restore> get_all_keys_and_values_of_file(const QString& file_name);
+    QString read_inf_string(const QString& section_name, const QString& key_name);
     void write_inf_string(const QString& section_name, const QString& key_name, const QString& value);
     void delete_inf_section(const QString& section_name);
+
 public slots:
     void slot_esc_pressed();
     void slot_stop_clicked();
     void slot_copy_to_clipboard_pressed();
     void slot_run_clicked(const int right_now, const QString &utime, const QString &udate);
-    void slot_is_file_exists(QString fname, const QString& rvt_version);
+    void slot_clear_log_files();
     void slot_save_views_and_sites_to_file(const QString& fname, const QString& view_name, const QString& site_name, const QString& output_file_name,
                                            const QString& json_file_path, const bool should_be_exported, const int append_mode);
 };

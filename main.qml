@@ -20,7 +20,6 @@ focus: true;
 Keys.onEscapePressed: esc_key_pressed();
 
 property bool items_enabled: true;
-property bool file_exists: false;
 
 /* отдельный счётчик списка для файлов без галочки 3D */
 property int rows_wo_views_n_sites: 0;
@@ -42,47 +41,41 @@ signal signal_run_clicked(rightNow: int, utime: string, udate: string);
 signal signal_esc_key_pressed();
 signal signal_save_views_and_sites_to_file(sig_file_name: string, sig_view_name: string, sig_site_name: string,
                                            sig_output_file_name: string, sig_json_path: string, sig_should_be_exported: bool, sig_is_append: int);
-signal signal_is_file_exists(fname: string, rvt_version: string);
+signal signal_clear_log_files();
 
-Component.onCompleted:
-{
+Component.onCompleted: {
     /* array initialization, removing header line */
     rows_array.splice(0, 1);
 }
 
 /* Обернул сигнал в ф-цию, чтобы вызывать его из backend */
-function stop_clicked()
-{
+function stop_clicked() {
     signal_stop_clicked();
     lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Процесс закрыт"});
     items_enabled = true;
 }
 
-function clear_main_list(){
+function clear_main_list() {
     rows_array = empty_array_structure;
     listModel.clear();
 }
 
-function add_item_cb_files_sav(sav_file_name: string)
-{
+function add_item_cb_files_sav(sav_file_name: string) {
     model_sav_file.append( { "text": sav_file_name} );
 }
 
-function add_subrow_wrapper(lvMainRowId: int, _3dview_Text: string, site_Text: string, fNameText: string, JSON_text: string)
-{
+function add_subrow_wrapper(lvMainRowId: int, _3dview_Text: string, site_Text: string, fNameText: string, JSON_text: string) {
     lvMain.add_subrow(lvMainRowId, _3dview_Text, site_Text, fNameText, JSON_text);
 }
 
-function add_row_from_cpp(rvt_file_path: string, should_be_exported: bool)
-{
+function add_row_from_cpp(rvt_file_path: string, should_be_exported: bool) {
     /* rows_WO_views_n_sites - это отдельный счётчик списка для файлов без галочки "3D" */
     ++rows_wo_views_n_sites;
 
     listModel.append({ "path": rvt_file_path, "shouldExport": should_be_exported });
 }
 
-function add_row_w_subrows_from_cpp(lvMainRowId: int, filePath: string, _3dview_Text: string, site_Text: string, fNameText: string, JSON_text: string, should_be_exported: bool)
-{
+function add_row_w_subrows_from_cpp(lvMainRowId: int, filePath: string, _3dview_Text: string, site_Text: string, fNameText: string, JSON_text: string, should_be_exported: bool) {
     listModel.append({ "path": filePath, "shouldExport": should_be_exported });
 
     /* invalidating DOM immediately */
@@ -127,8 +120,7 @@ function add_row_w_subrows_from_cpp(lvMainRowId: int, filePath: string, _3dview_
     }
 }
 
-function set_input_field_text(fieldName: string, objectName: string, text: string)
-{
+function set_input_field_text(fieldName: string, objectName: string, text: string) {
     for(var i = 0; i < rows_array.length; i++)
     {
         if(rows_array[i].hwnd.objectName === objectName)
@@ -138,8 +130,7 @@ function set_input_field_text(fieldName: string, objectName: string, text: strin
     }
 }
 
-function remove_subrow(objectName: string)
-{
+function remove_subrow(objectName: string) {
     for(var i = 0; i < rows_array.length; i++)
     {
         if(rows_array[i].hwnd.objectName === objectName)
@@ -153,8 +144,8 @@ function remove_subrow(objectName: string)
     }
 }
 
-function remove_subrows(lvMainRowId: int)    /* Удаляем все подпозиции, если галочку "3D" сняли */
-{
+function remove_subrows(lvMainRowId: int) {   /* Удаляем все подпозиции, если галочку "3D" сняли */
+
     for(var i = 0; i < rows_array.length; i++)
         if(rows_array[i].lv_row_index === lvMainRowId)
             try{
@@ -165,8 +156,7 @@ function remove_subrows(lvMainRowId: int)    /* Удаляем все подпо
 }
 
 /* ф-ция также вызывается из closeEvent в backend.h */
-function save_views_and_sites_to_file()
-{
+function save_views_and_sites_to_file() {
     /* Сортируем массив перед записью в файл по полю "Имя RVT-файла", т.к. иначе, идущие не подряд одинаковые RVT-файлы, будут при запуске экспортера создавать отдельные позиции */
     rows_array.sort( (a, b) => (a.arrf_file_path > b.arrf_file_path) ? 1 : ((b.arrf_file_path > a.arrf_file_path) ? -1 : 0));
 
@@ -180,28 +170,24 @@ function save_views_and_sites_to_file()
         signal_save_views_and_sites_to_file("", "", "", "", "", false, -1);
 }
 
-function esc_key_pressed()
-{
+function esc_key_pressed() {
     save_views_and_sites_to_file();
     signal_esc_key_pressed();
 }
 
 /* Ф-ция вызывается из closeEvent в backend.h */
-function get_rows_wo_views_n_sites()
-{
+function get_rows_wo_views_n_sites() {
     return rows_wo_views_n_sites;
 }
 
-Connections
-{
+Connections {
     target: datePicker;
     onDatePicked: {
         console.log(selectedDate);
     }
 }
 
-MouseArea
-{
+MouseArea {
     anchors.fill: parent;
     onClicked:
         function(mouse){
@@ -212,8 +198,7 @@ MouseArea
         }
 }
 
-Rectangle
-{
+Rectangle {
     y: 5;
     x: 10;
 
@@ -221,12 +206,10 @@ Rectangle
     anchors.fill: parent;
     anchors.margins: default_spacing;
 
-    RoundButton
-    {
+    RoundButton {
         id: btnAddLocalProject;
         enabled: items_enabled;
-        anchors
-        {
+        anchors {
             left: parent.left;
             top: parent.top;
             margins: default_spacing;
@@ -237,23 +220,20 @@ Rectangle
         onClicked: fileDialog.open();
     }
 
-    Row
-    {
+    Row {
         id: theTextBoxRow;
         anchors.top: btnAddLocalProject.bottom;
         anchors.left: btnAddLocalProject.left;
         anchors.topMargin: 10;
         spacing: 25;
-        TextField
-        {
+        TextField {
             id: rsnEditBox;
             width: btnAddLocalProject.width-50;
             text: "RSN://ALD-VM-REVIT01/Projects/"
         }
     }
 
-    Image
-    {
+    Image {
         id: thePlusImage;
         source: "resources/plus.png";
         enabled: items_enabled;
@@ -261,27 +241,19 @@ Rectangle
         anchors.top: theTextBoxRow.top;
         width: 15;
         height: 15;
-        MouseArea
-        {
+        MouseArea {
             anchors.fill: parent;
-            onClicked:
-            {
-               signal_is_file_exists(rsnEditBox.text, cbVersion.currentText);
-               if (file_exists)
-               {
-                    if ( rsnEditBox.text !== "")
-                    {
-                        listModel.append({ "path": rsnEditBox.text, shouldExport: true });
-                        ++rows_wo_views_n_sites;
-                    }
-                    rsnEditBox.text = "";
-               }
+            onClicked: {
+                if ( rsnEditBox.text !== "") {
+                    listModel.append({ "path": rsnEditBox.text, shouldExport: true });
+                    ++rows_wo_views_n_sites;
+                }
+                rsnEditBox.text = "";
             }
         }
     }
 
-    CustomBorderRect
-    {
+    CustomBorderRect {
         id: borderRect;
         anchors.top: theTextBoxRow.bottom;
         anchors.margins: 10;
@@ -297,8 +269,7 @@ Rectangle
         borderColor: "black";
     }
 
-    CustomBorderRect
-    {
+    CustomBorderRect {
         id: logFrame;
         y: 10;
         anchors.margins: 10;
@@ -314,13 +285,11 @@ Rectangle
         borderColor: "black";
     }
 
-    LabelALDE
-    {
+    LabelALDE {
         id: labelLog;
         x: 1000;
         anchors.top: btnAddLocalProject.top;
-        Text
-        {
+        Text {
             text: "Журнал";
             font.pixelSize: 18;
         }
@@ -337,8 +306,7 @@ Rectangle
         }
     }
 
-    ListView
-    {
+    ListView {
         id: lvMain;
         enabled: items_enabled;
         objectName: "o_lvMain";
@@ -352,8 +320,7 @@ Rectangle
         ScrollBar.vertical: vBar;
 
         delegate:
-        Column
-        {
+        Column {
           id: horizontalColumn;
           objectName: "summaryDelegate";
 
@@ -362,8 +329,7 @@ Rectangle
             objectName: "horizontalRow";
             property bool shouldExport: true;   /* Значение меняется ф-циями add_row_from_cpp и add_row_w_subrows_from_cpp */
 
-            CheckBox
-            {
+            CheckBox {
                 id: cbShouldBeExported;
                 objectName: "cbShouldBeExported_" + index;
                 ToolTip.text: "Выгружать файл - да/нет";
@@ -371,14 +337,12 @@ Rectangle
                 height: 17;
                 width: 17;
                 checked: shouldExport;
-                onClicked:
-                {
+                onClicked: {
                     if (cbShouldBeExported.checked){
                         var checkedFilePath = listModel.get(index).path;
                         for(var i = 0; i < rows_array.length; i++)
                         {
-                            if(rows_array[i].arrf_file_path === checkedFilePath)
-                            {
+                            if(rows_array[i].arrf_file_path === checkedFilePath) {
                                 rows_array[i].arrf_should_be_exported = true;
                             }
                         }
@@ -400,21 +364,18 @@ Rectangle
                 }
             }
 
-            Text
-            {
+            Text {
                 id: rowText;
                 text: path;
             }
 
             /* spacer между именем файла и чекбоксом "3D" */
-            Rectangle
-            {
+            Rectangle {
                 width: lvMain.width - rowText.width - 52;
                 height: 20;
             }
 
-            CheckBox3DViews
-            {
+            CheckBox3DViews {
                 id: cbExtract3D;
                 objectName: "cbExtract3D_" + index;
                 ToolTip.text: "Указать 3D-виды и площадки";
@@ -428,7 +389,7 @@ Rectangle
                 property string cbProp_filenameText: "";
                 property string cbProp_jsonPathText: "";                
 
-                onClicked:{
+                onClicked: {
                     id_row_additional_fields = horizontalColumn;
                     if (cbExtract3D.checked)
                     {
@@ -448,20 +409,18 @@ Rectangle
                     }
                 }
             }
-            Image
-            {
+            Image {
                 source: "resources/trash.png";
                 width: 18;
                 height: 18;
-                MouseArea
-                {
+                MouseArea {
                     anchors.fill: parent;
                     onClicked: {
                         var removedIndex = index;
                         rows_wo_views_n_sites--;
                         remove_subrows(index);
                         listModel.remove(index);
-                        try{
+                        try {
                             rows_array.forEach(function(_row, _index) {
                                 if (_row.lv_row_index > removedIndex)
                                     _row.lv_row_index--;
@@ -474,33 +433,29 @@ Rectangle
             }
           } /* Row */
         }
-        model: ListModel
-        {
+        model: ListModel {
             id: listModel;
 /*
-            ListElement
-            {
+            ListElement {
                 path: "C:\\Projects\\Autodesk\\wall.rvt"; shouldExport: true;
             }
-            ListElement
-            {
+            ListElement {
                 path: "\\\\srv-c666-666\\Projects\\Revit\\arm.rvt"; shouldExport: true;
             }
-            ListElement
-            {
+            ListElement {
                 path: "RSN://Projects/101/floor.rvt"; shouldExport: true;
             }
+
+            /* bool file_exists, bool remove_or_not
+            function set_var_file_exists_from_cpp(remove_or_not) { file_exists = remove_or_not; }
 */
-            function remove_last_row(remove)
-            {
-                file_exists = remove;
-            }
         }
+
         /* Uses black magic to hunt for the delegate instance with the given
          * index. Returns undefined if there's no currently instantiated
          * delegate with that index.
          */
-        function add_subrow(index: int, _3dview_Text: string, site_Text: string, fNameText: string, JSON_text: string){
+        function add_subrow(index: int, _3dview_Text: string, site_Text: string, fNameText: string, JSON_text: string) {
             var i = 0;
             for(var x = 0; x < contentItem.children.length; ++x) {
                 var item = contentItem.children[x];
@@ -533,8 +488,7 @@ Rectangle
         }
     }
 
-    ListView
-    {
+    ListView {
         id: lvLog;
         anchors.top: logFrame.top;
         anchors.margins: 10;
@@ -560,23 +514,19 @@ Rectangle
 
 
         delegate:
-            Text
-            {
+            Text {
                 x: 5;
                 id: rowTxt;
                 text: msg
             }
 
-        model: ListModel
-        {
+        model: ListModel {
             id: lmLogModel;
-            ListElement
-            {
+            ListElement {
                 msg: "";
             }
 
-            function add_to_log_listview(caption)
-            {
+            function add_to_log_listview(caption) {
                 lmLogModel.append({"msg": new Date().toLocaleTimeString() + " " +caption});
             }
         }
@@ -586,8 +536,7 @@ Rectangle
         }
     }
 
-    RoundButton
-    {
+    RoundButton {
         id: btnSaveTrueToConfig;
         objectName: btnRun;
         enabled: mainWindow.items_enabled;
@@ -597,24 +546,20 @@ Rectangle
         text: "🚀";
         width: 45;
         height: 45;
-        onClicked:
-        {
+        onClicked: {
             if (lvMain.count !== 0)
                 menuLaunch.open()
             else
                 lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Добавьте, как минимум, один файл в список для экспорта!"});
         }
 
-        Menu
-        {
+        Menu {
             id: menuLaunch;
             y: btnSaveTrueToConfig.height;
-            MenuItem
-            {
+            MenuItem {
                 id: menuRunNow;
                 text: "Запустить сейчас";
-                onTriggered:
-                {
+                onTriggered: {
                     var selectedTime = new Date().toLocaleString(Qt.locale(),"hh:mm");
                     save_views_and_sites_to_file();
                     lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Запуск прямо сейчас (в " +  selectedTime + ")"});
@@ -623,12 +568,10 @@ Rectangle
                     btnStop.enabled = true;
                 }
             }
-            MenuItem
-            {
+            MenuItem {
                 id: menuRunScheduled;
                 text: "По указанному времени";
-                onTriggered:
-                {
+                onTriggered: {
                     var selectedTime = uTime.getTime();
                     save_views_and_sites_to_file();
                     lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Назначенное время " + selectedDate + ", " + selectedTime.hour.toString() + ":" + selectedTime.minute.toString()});
@@ -640,8 +583,7 @@ Rectangle
         }
     }
 
-    RoundButton
-    {
+    RoundButton {
         id: btnStop;
         enabled: mainWindow.items_enabled;
         anchors.right: btnSaveTrueToConfig.left;
@@ -650,19 +592,12 @@ Rectangle
         text: "⬛";
         width: 45;
         height: 45;
-        onClicked:
-        {
+        onClicked: {
             stop_clicked();
         }
     }
 
-    TextEdit
-    {
-        id: fakeCopyClipboardTextEdit
-        visible: false
-    }
-    RoundButton
-    {
+    RoundButton {
         id: btnClipboard;
         anchors.left: lvLog.left;
         anchors.bottom: parent.bottom;
@@ -673,33 +608,43 @@ Rectangle
         text: "📋";
         width: 45;
         height: 45;
-        onClicked:
-        {
-            signal_copy_to_clipboard_clicked();
-/*          fakeCopyClipboardTextEdit.text = "";
-            for (var i = 0; i < lmLogModel.count; i++ )
-            {
-                lvLog.currentIndex = i;
-                fakeCopyClipboardTextEdit.text += lmLogModel.get(lvLog.currentIndex).msg + "\n";
+        onClicked: {
+            menu_log_content.open();
+        }
+
+        Menu {
+            id: menu_log_content;
+            y: btnClipboard.height;
+            MenuItem {
+                id: menu_copy_and_clear_log;
+                text: "Copy log and clear";
+                onTriggered: {
+                    signal_copy_to_clipboard_clicked();
+                    lmLogModel.clear();
+                }
             }
-            fakeCopyClipboardTextEdit.selectAll();
-            fakeCopyClipboardTextEdit.copy();
-*/
-            lmLogModel.clear();
+            MenuItem
+            {
+                id: menu_clear_logs;
+                text: "Очистить файлы журналов";
+                onTriggered:
+                {
+                    signal_clear_log_files();
+                }
+            }
         }
     }
 
 /************************************* Настройки экспорта ************************************/
-    LabelALDE
-    {
+
+    LabelALDE {
         id: labelExportSettings;
         x: 35
         anchors.top: borderRect.bottom;
         text: "Настройки экспорта";
     }
 
-    ColumnLayout
-    {
+    ColumnLayout {
         anchors.top: labelExportSettings.verticalCenter;
         x: 10;
         Rectangle {
@@ -711,13 +656,11 @@ Rectangle
         }
     }
 
-    ColumnLayout
-    {
+    ColumnLayout {
        anchors.top: labelExportSettings.verticalCenter;
         x: 155;
 
-        Rectangle
-        {
+        Rectangle {
             width: 655;
             Layout.fillWidth: true;
             Layout.preferredHeight: 1;
@@ -782,12 +725,14 @@ Rectangle
                 objectName: "model_sav_file";
                 ListElement { text: "views_sites.sav" }
             }
+            /* sav_file_choose_dialog и так вызывает on_sav_combo_changed
             onCountChanged: {
                     backend.on_sav_combo_changed(currentIndex, currentValue, "");
                 }
+            */
             onActivated: {
-                    backend.on_sav_combo_changed(currentIndex, currentValue, "");
-                }
+                backend.on_sav_combo_changed(currentIndex, currentValue, "");
+            }
         }
 
         Image {
@@ -799,11 +744,9 @@ Rectangle
             anchors.leftMargin: 10;
             width: 15;
             height: 15;
-            MouseArea
-            {
+            MouseArea {
                 anchors.fill: parent;
-                onClicked:
-                {
+                onClicked: {
                    sav_file_choose_dialog.open();
                 }
             }
@@ -830,8 +773,7 @@ Rectangle
             id: sav_file_choose_dialog;
             title: "Please choose a sav-file";
             nameFilters: [".sav-files (*.sav)"];
-            onAccepted:
-            {
+            onAccepted: {
                 var path = sav_file_choose_dialog.selectedFile.toString();
                 // remove prefixed "file:///"
                 path = path.replace(/^(file:\/{3})/,"");
@@ -852,21 +794,20 @@ Rectangle
         }
     }
 /************************************* Время/Дата выгрузки ****************************************/
-    Row
-    {
+
+    Row {
         id: horizonRow;
 
         anchors.top: horizRow.bottom;
         anchors.topMargin: 25;
         x: 90;
-        LabelALDE
-        {
+        LabelALDE {
             id: labelTime;
             text: "Время выгрузки";
         }
     }
 
-    UTimePicker{
+    UTimePicker {
         id: uTime;
         enabled: mainWindow.items_enabled;
         objectName: "uTime";
@@ -875,33 +816,28 @@ Rectangle
         x: 65;
         width: 200;             // Font Size <-> depends!
         size: Qt.size(0, 40);
-        onChanged:
-        {
+        onChanged: {
             var i = getTime();
         }
     }
 
-    Row
-    {
+    Row {
         id: horizontalDateRow;
 
         anchors.top: horizRow.bottom;
         anchors.topMargin: 25;
         anchors.leftMargin: 25;
         x: 290;
-        LabelALDE
-        {
+        LabelALDE {
             id: labelDateText;
             text: "Дата выгрузки: ";
         }
-        LabelALDE
-        {
+        LabelALDE {
             id: labelDate;
             text: Qt.formatDateTime(new Date(), "dd.MM.yy" + "   ");
         }
 
-        RoundButton
-        {
+        RoundButton {
             id: btnPickDate;
             x: 140
             enabled: items_enabled;
@@ -911,15 +847,13 @@ Rectangle
             anchors.topMargin: 20;
             width: 14;
             height: 14;
-            onClicked:
-            {
+            onClicked: {
                 datePicker.visible = true;
             }
         }
     }
 
-    JWDMDatePicker
-    {
+    JWDMDatePicker {
         id: datePicker;
         visible: false;
         enabled: mainWindow.items_enabled;
@@ -940,8 +874,7 @@ Rectangle
 
 /******************************* Industry Foundation Classes **********************************/
 
-    CheckBoxALDE
-    {
+    CheckBoxALDE {
         id: cbIFC;
         enabled: mainWindow.items_enabled;
         objectName: "cbIFC";
@@ -952,12 +885,10 @@ Rectangle
         text: "Industry Foundation Classes (IFC)";
     }
 
-    ColumnLayout
-    {
+    ColumnLayout {
         anchors.top: cbIFC.verticalCenter;
         x: 10;
-        Rectangle
-        {
+        Rectangle {
             id: lineIFC;
             width: 20;
             Layout.fillWidth: true;
@@ -966,13 +897,11 @@ Rectangle
         }
     }
 
-    ColumnLayout
-    {
+    ColumnLayout {
         id: line_cb_IFC_col;
         anchors.top: cbIFC.verticalCenter;
         x: 250;
-        Rectangle
-        {
+        Rectangle {
             id: line_cb_IFC;
             width: 560;
             Layout.fillWidth: true;
@@ -981,8 +910,7 @@ Rectangle
         }
     }
 
-    LabelALDE
-    {
+    LabelALDE {
         id: labelSelectDir;
         anchors.topMargin: 10;
         x: 20;
@@ -990,110 +918,38 @@ Rectangle
         text: "Директория для выгрузки файлов:";
     }
 
-    ColumnLayout
-    {
+    ColumnLayout {
         id: horizIFC_Col_text;
         x: 30;
         anchors.topMargin: 5;
         anchors.top: labelSelectDir.bottom;
-        LabelALDE
-        {
+        LabelALDE {
             id: labelIFCPath;
             objectName: "text_IFCPath";
             text: "C:\\Documents and Settings";
         }
     }
 
-    ColumnLayout
-    {
+    ColumnLayout {
         id: btnBrowseFolderCol;
         enabled: items_enabled;
         anchors.top: cbIFC.bottom;
         anchors.right: borderRect.right;
-        RoundButton
-        {
+        RoundButton {
             id: btnBrowseFolder;
             text: "...";
             ToolTip.text: "Нажмите, чтобы выбрать директорию для экспорта";
             ToolTip.visible: hovered;
-            onClicked:
-            {
+            onClicked: {
                 selectDirectoryDialog.open();
             }
         }
     }
 /******************************* Industry Foundation Classes **********************************/
 
-/************************************************ Версия IFC **********************************
-
-    Row
-    {
-        id: hRow;
-        objectName: "row_IFCVersion";
-        anchors.top: btnBrowseFolderCol.bottom;
-        anchors.left: borderRect.left;
-        anchors.topMargin: 5;
-
-        /* rib 2.12.25 создано отд.поле для json, в кот. указ. верс. IFC
-        LabelALDE
-        {
-            id: labelIFCVersion;
-            anchors.top: horizIFC_Col_text.bottom;
-            text: "Задать файл конфигурации .json и версию IFC:";
-        }
-
-        /* rib 24.04.2025 Выбор версии IFC перенесен в отд. программу/окно
-        ComboBox
-        {
-            id: cbIFCVersion;
-            enabled: itemsEnabled;
-            editable: false;
-            anchors.left: labelIFCVersion.right;
-            anchors.leftMargin: 10;
-            anchors.top: labelIFCVersion.top;
-            currentIndex: 10;
-            model: ListModel
-            {
-                id: revitIFCVersion;
-                ListElement { text: "Default"   }
-                ListElement { text: "IFCBCA"    }
-                ListElement { text: "IFC2x2"    }
-                ListElement { text: "IFC2x3"    }
-                ListElement { text: "IFCCOBIE"  }
-                ListElement { text: "IFC2x3CV2" }
-                ListElement { text: "IFC2x3FM"  }
-                ListElement { text: "IFC2x3BFM" }
-                ListElement { text: "IFC4"      }
-                ListElement { text: "IFC4DTV"   }
-                ListElement { text: "IFC4RV"    }
-            }
-        }
-
-        /* rib 2.12.25 создано отд.поле для json, в кот. указ. верс. IFC
-        RoundButton
-        {
-            id: btnIFCSettings;
-            text: "⚙️";
-            enabled: itemsEnabled;
-            anchors.left: labelIFCVersion.right;
-            anchors.leftMargin: 15;
-            y: -10;
-            ToolTip.text: "Настройки фaйлов IFC";
-            ToolTip.visible: hovered;
-            onClicked:
-            {
-                signal_btn_ifc_settings_clicked();
-            }
-        }
-    }
-
-/************************************************ Версия IFC **********************************/
-
-
 /******************************* Navisworks **********************************/
 
-    CheckBoxALDE
-    {
+    CheckBoxALDE {
         id: cbNavi;
         objectName: "cbNavi";
         enabled: items_enabled;
@@ -1102,21 +958,17 @@ Rectangle
         x: 35
         checked: false;
         text: "Navisworks";
-        onCheckedChanged:
-        {
-            if(!cbNavi.checked && !cbIFC.checked)
-            {
+        onCheckedChanged: {
+            if(!cbNavi.checked && !cbIFC.checked) {
                 btnSaveTrueToConfig.enabled = false;
             }
         }
     }
 
-    ColumnLayout
-    {
+    ColumnLayout {
         anchors.top: cbNavi.verticalCenter;
         x: 10;
-        Rectangle   /* Горизонтальная линия */
-        {
+        Rectangle {  /* Горизонтальная линия */
             id: lineNavi;
             width: 20;
             Layout.fillWidth: true;
@@ -1125,13 +977,11 @@ Rectangle
         }
     }
 
-    ColumnLayout
-    {
+    ColumnLayout {
         id: line_cb_Navi_col;
         anchors.top: cbNavi.verticalCenter;
         x: 130;
-        Rectangle
-        {
+        Rectangle {
             id: line_cb_Navi;
             width: 680;
             Layout.fillWidth: true;
@@ -1142,8 +992,7 @@ Rectangle
 
 /******************************* Navisworks **********************************/
 
-    LabelALDE
-    {
+    LabelALDE {
         id: labelInfoPrio;
         anchors.topMargin: 30;
         x: 10;
@@ -1161,8 +1010,7 @@ Rectangle
         border.color: "gray";
         border.width: 1;
         radius: width * 0.5;
-        RoundButton
-        {
+        RoundButton {
             id: textHelpInfo;
             enabled: false;
             anchors.centerIn: parent
@@ -1174,35 +1022,27 @@ Rectangle
         }
     }
 
-    FileDialog
-    {
+    FileDialog {
         id: fileDialog;
         title: "Please choose a file";
         /* nameFilters: ["Revit Files (*.rvt *.ifc)"]; */
         nameFilters: ["Revit Files (*.rvt)"];
-        onAccepted:
-        {
+        onAccepted: {
             var path = fileDialog.selectedFile.toString();
             // remove prefixed "file:///"
             path = path.replace(/^(file:\/{3})/,"");
             // unescape html codes like '%23' for '#'
 
-            signal_is_file_exists(decodeURIComponent(path), cbVersion.currentText);
-            if (file_exists)
-            {
-                listModel.append({"path": decodeURIComponent(path), shouldExport: true });
-                fileDialog.selectedFile = "";
-                fileDialog.close();
-            }
+            listModel.append({"path": decodeURIComponent(path), shouldExport: true });
+            fileDialog.selectedFile = "";
+            fileDialog.close();
         }
     }
 
-    FolderDialog
-    {
+    FolderDialog {
         id: selectDirectoryDialog;
         title: "Выберите директорию для экспорта";
-        onAccepted:
-        {
+        onAccepted: {
             var path = selectDirectoryDialog.selectedFolder.toString();
             // remove prefixed "file:///"
             path = path.replace(/^(file:\/{3})/,"");
@@ -1214,8 +1054,7 @@ Rectangle
     }
 }
 
-property var splashWindow: Window
-{
+property var splashWindow: Window {
     id: splash;
     color: "transparent";
     title: "Splash Window";
@@ -1231,30 +1070,26 @@ property var splashWindow: Window
     width: splashImage.width;
     height: splashImage.height;
 
-    Image
-    {
+    Image {
         id: splashImage
         source: "shared/images/qt-logo.png";
-        TapHandler
-        {
+        TapHandler {
             onTapped: splash.exit()
         }
     }
 
-    function exit()
-    {
+    function exit() {
         mainWindow.visible = true
         splash.visible = false
         splash.timeout()
     }
 
     //! [timer]
-    Timer
-    {
+    Timer {
         interval: splash.timeoutInterval; running: splash.visible; repeat: false
         onTriggered: splash.exit()
     }
     //! [timer]
     visible: true
-}
+  }
 }
