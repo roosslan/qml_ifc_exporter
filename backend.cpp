@@ -1,4 +1,8 @@
-/* last change 24.4.2026, removed 60-chars dividing */
+/*
+*  24.04.2025 Выбор версии IFC перенесен в отд. программу/окно
+*  24.4.2026, removed 60-chars dividing
+*  last changed 14.5.26
+*/
 
 #include "backend.h"
 #include <QCheckbox>
@@ -100,7 +104,7 @@ void BackEnd::discard_socket()
 void BackEnd::read_socket()
 {
     QTcpSocket* q_socket = reinterpret_cast<QTcpSocket*>(sender());
-    QByteArray qmessage = q_socket->readAll(); // Read message
+    QByteArray qmessage = q_socket->readAll(); /* Read message */
 
     qDebug() << "bg | " << QString(qmessage);
 
@@ -127,7 +131,7 @@ void BackEnd::display_error(QAbstractSocket::SocketError socket_error)
     }
 }
 
-/* Adds and displays a message in the LOG listbox */
+/* Adds and displays a message in the LOG-listbox */
 void BackEnd::display_log_message(const QString& qstr_msg)
 {
     const QQuickItem* lv_log = m_item->findChild<QQuickItem*>("o_lvLog");
@@ -143,22 +147,10 @@ void BackEnd::display_log_message(const QString& qstr_msg)
                                   Q_RETURN_ARG(QVariant, returned_value));
 
         const QString app_data = get_env("appdata");
-        if (QFile::exists(app_data + "\\alabuga_dev\\msg_on_finish")) {
-            QLibrary qLib;
-            char win_name_win[] = "IFC exporter", win_message_win[] = "Done!";
-            qLib.setFileName("user32");
-            if(qLib.load())
-                if(qLib.isLoaded())
-                {
-                    typedef int (*pMessageBox)(void* hWnd, char *lpText, char *lpCaption, unsigned int uType);
-                    pMessageBox MessageBoxA = (pMessageBox)qLib.resolve("MessageBoxA");
+        if (QFile::exists(app_data + app_directory + "\\msg_on_finish")) {
 
-                    if(MessageBoxA)
-                        MessageBoxA(nullptr, &win_message_win[0x00], &win_name_win[0x00], 0x40);
-
-                    MessageBoxA = nullptr;
-                    qLib.unload();
-                }
+            QMetaObject::invokeMethod(m_item, "show_message_box",
+                                      Q_RETURN_ARG(QVariant, returned_value));
         }
     }
 }
@@ -214,7 +206,6 @@ void BackEnd::write_inf_string(const QString& section_name, const QString& key_n
 
 QString BackEnd::read_inf_string(const QString& section_name, const QString& key_name)
 {
-    /* Так как все INI-файлы для WritePrivateProfileStringW всегда ANSI, пишем сами - как UTF8 с русскими символами */
     m_config_file_.SetUnicode();
     SI_Error rc = m_config_file_.LoadFile(inf_file.toStdString().c_str());
     /* if (rc < 0){ qDebug() << "Cannot open INF-file " << infFile; }; */
@@ -255,7 +246,7 @@ const bool BackEnd::str2bool(const QString& bool_as_str)
 }
 
 /*
- * Парсим в vec строки (вьюхи/площадки) вида
+ * Парсим в vector строки (вьюхи/площадки) вида
  * C:/Для экспорта IFC/АР3_проект.rvt = 3dViewNavisworks = Площадка1 = ВыходноеИмяФайла = jsonСконфигурацией = Экспорт?true/false
  */
 std::vector<to_restore> BackEnd::get_all_keys_and_values_of_file(const QString& file_name)
@@ -272,15 +263,17 @@ std::vector<to_restore> BackEnd::get_all_keys_and_values_of_file(const QString& 
 
     while(!ss_in.atEnd()) {
         const QString q_line = ss_in.readLine();
-        QStringList fields = q_line.split("=");
-        line_to_restore.fname = fields.at(0).trimmed();
-        line_to_restore.view = fields.at(1).trimmed();
-        line_to_restore.site = fields.at(2).trimmed();
-        line_to_restore.outputfname = fields.at(3).trimmed();
-        line_to_restore.jsonpath = fields.at(4).trimmed();
-        line_to_restore.should_exported = str2bool(fields.at(5).trimmed());
-        rret.push_back(line_to_restore);
-        line_to_restore  = {};
+        if (q_line != "") {
+            QStringList fields = q_line.split("=");
+            line_to_restore.fname = fields.at(0).trimmed();
+            line_to_restore.view = fields.at(1).trimmed();
+            line_to_restore.site = fields.at(2).trimmed();
+            line_to_restore.outputfname = fields.at(3).trimmed();
+            line_to_restore.jsonpath = fields.at(4).trimmed();
+            line_to_restore.should_exported = str2bool(fields.at(5).trimmed());
+            rret.push_back(line_to_restore);
+            line_to_restore  = {};
+        }
     }
     q_file.close();
     return rret;
@@ -314,6 +307,8 @@ void BackEnd::slot_save_views_and_sites_to_file(const QString& fname, const QStr
 void BackEnd::on_sav_combo_changed(int index, const QString &file_name, QString full_path) {
 
     QVariant returned_value;
+
+    delete_inf_section("SourceDisksFiles");
 
     /* Если full_path пустой, значит просто выбрали другую позицию в combobox'e */
     if (full_path == "") {
@@ -430,13 +425,12 @@ void clr_logfile(const QString &fpath){
 }
 void BackEnd::slot_clear_log_files() {
     const QString app_data = get_env("appdata");
-    clr_logfile(app_data + "\\alabuga_dev\\alabuga.q.log");
-    clr_logfile(app_data + "\\alabuga_dev\\alabuga.dev.log");
-    clr_logfile(app_data + "\\alabuga_dev\\alabuga.bg.log");
+    clr_logfile(app_data + qt_log);
+    clr_logfile(app_data + addin_log);
+    clr_logfile(app_data + bg_helper_log);
 }
 
-void BackEnd::slot_run_clicked(const int right_now, const QString& utime, const QString& udate)
-{
+void BackEnd::slot_run_clicked(const int right_now, const QString& utime, const QString& udate){
     delete_inf_section("SourceDisksFiles");
 
     write_inf_string("ControlFlags", "Time", utime);
@@ -461,28 +455,18 @@ void BackEnd::slot_run_clicked(const int right_now, const QString& utime, const 
     const QString s_ifc_path = qquick_text_ifc_path->property("text").toString();
     write_inf_string("DestinationDirs", "DefaultDestDir", s_ifc_path);
 
-    /* 24.04.2025 Выбор версии IFC перенесен в отд. программу/окно
-     *
-     * QQuickItem* qtextIFCVers = m_item->findChild<QQuickItem*>("row_IFCVersion");
-     * QObject* cbIFCvers = qtextIFCVers->children()[1];
-     * QString ifcVersion = cbIFCvers->property("currentText").toString();
-     * WriteInfString("ControlFlags", "IFCVersion", ifcVersion);            */
-
     const QQuickItem* lv_main = m_item->findChild<QQuickItem*>("o_lvMain");
     QObject* list_model = lv_main->children()[1];
     QAbstractListModel* qml_list_model = qobject_cast<QAbstractListModel*>(list_model);
 
-    if (qml_list_model != nullptr)
-    {
-        for (int i = 0; i < qml_list_model->rowCount(); ++i)
-        {
+    if (qml_list_model != nullptr) {
+        for (int i = 0; i < qml_list_model->rowCount(); ++i) {
             const QString rvt_file_name = qml_list_model->data(qml_list_model->index(i, 0), 0).toString();
             const QString should_be_exported = qml_list_model->data(qml_list_model->index(i, 0), 1).toString();
             write_inf_string("SourceDisksFiles", rvt_file_name.trimmed(), should_be_exported);
         }
     }
-    else
-    {
+    else {
         qDebug() << "Getting *.RVT files list is failed!";
     }
 
@@ -490,20 +474,18 @@ void BackEnd::slot_run_clicked(const int right_now, const QString& utime, const 
     write_inf_string("ControlFlags", "Enabled", "true");
     qDebug() << "The control flag 'Enabled' was set to true";
 
-    if(right_now)    /* Запустить ПРЯМО сейчас! == 1 */
-    {
+    if(right_now) {   /* Запустить ПРЯМО сейчас! == 1 */
         pipe_client* local_pipe = new pipe_client("\\\\.\\pipe\\bghelperpipe", this);
         local_pipe->send_message_to_server("START_IMMEDIATELY");
     }
 }
 
-void BackEnd::slot_esc_pressed()
-{
+void BackEnd::slot_esc_pressed(){
+    /* TODO: добавить вопросительное окно? */
     m_window_->exit(0);
 }
 
-void bgMessageHandler(QtMsgType type, const QMessageLogContext &, const QString & msg)
-{
+void bgMessageHandler(QtMsgType type, const QMessageLogContext &, const QString & msg){
     QString txt;
     switch (type)
     {
@@ -522,13 +504,13 @@ void bgMessageHandler(QtMsgType type, const QMessageLogContext &, const QString 
         txt = QString("Fatal: %1").arg(msg);
         abort();
     }
-    const QString file_name{"alabuga.q.log"};
+    const QString file_name{"qt.log"};
     const QString app_data = get_env("appdata");
 
     if (app_data.isEmpty()) {
         qFatal("Unable to find appData directory!");
     }
-    const QString log_file_location = "\\alabuga_dev\\" + file_name;
+    const QString log_file_location = app_directory +"\\" + file_name;
     QFile out_file(app_data + log_file_location);
 
     if (txt != "" && !msg.startsWith("QML Debugger: Waiting for connection on port") )
@@ -542,7 +524,7 @@ void bgMessageHandler(QtMsgType type, const QMessageLogContext &, const QString 
 /*
 void BackEnd::slot_btn_ifc_settings_clicked()
 {
-    Передаем окну IFCSettings наш handle, чтобы ifc_settings показался модально
+    Передаем окну IFCSettings наш handle, чтобы диалог ifc_settings показался модально
     QStringList args;
 
     args.append(QString::fromStdString(m_str_hwnd));

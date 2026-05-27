@@ -1,8 +1,9 @@
-/* last changed 24.4.2026 */
+/* last changed 27.5.2026 */
 
 #ifndef BACKEND_H
 #define BACKEND_H
 
+#include "sensitive_data.h"
 #include "simpleini.h"
 #include "helper_funcs.h"
 #include <windows.h>
@@ -65,8 +66,8 @@ private slots:
 public:
     BackEnd(QGuiApplication *parent, QObject* item, HWND hwnd);
     ~BackEnd();
-    QString inf_file = m_app_data_ + "\\alabuga_dev\\bimalde.inf";
-    QString views_and_sites_file = m_app_data_ + "\\alabuga_dev\\views_sites.sav";
+    QString inf_file = m_app_data_ + app_directory + "\\ifcexprt.inf";
+    QString views_and_sites_file = m_app_data_ + app_directory + "\\views_sites.sav";
     std::list<std::string> v_sav_files;
     void fill_combobox_sav_files();
     void load_sav_file_into_main_list(const QString &sav_file);
@@ -117,10 +118,8 @@ protected:
             QObject* list_model = lv_main->children()[1];
             QAbstractListModel* qml_list_model = qobject_cast<QAbstractListModel*>(list_model);
 
-            if (qml_list_model != nullptr)
-            {
-                for (int i = 0; i < qml_list_model->rowCount(); ++i)
-                {
+            if (qml_list_model != nullptr) {
+                for (int i = 0; i < qml_list_model->rowCount(); ++i) {
                     const QString rvt_file_name = qml_list_model->data(qml_list_model->index(i, 0), 0).toString();
                     const QString should_be_exported = qml_list_model->data(qml_list_model->index(i, 0), 1).toString();
                     backend_ruler->write_inf_string("SourceDisksFiles", rvt_file_name, should_be_exported);

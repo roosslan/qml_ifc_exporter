@@ -15,10 +15,10 @@ BEGIN
     BEGIN
         BLOCK "000004b0"
         BEGIN
-            VALUE "CompanyName", "alabuga.dev"
-            VALUE "FileDescription", "alabuga.dev ifc_exporter"
+            VALUE "CompanyName", "rasa"
+            VALUE "FileDescription", "ifc_exporter"
             VALUE "FileVersion", "5.11.5.26"
-            VALUE "LegalCopyright", "Copyright (C) 2022 - 2026 alabuga.dev"
+            VALUE "LegalCopyright", "Copyright (C) rasa 2022 - 2026"
             VALUE "InternalName", "ifc_exporter"
             VALUE "OriginalFilename", "ifc_exporter.exe"
             VALUE "ProductName", "ifc/nwc export tool"

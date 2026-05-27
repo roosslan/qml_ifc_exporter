@@ -19,7 +19,7 @@ void remove_duplicate_lines_from_file(const std::string& file_path) {
     }
     input_file.close();
 
-    /* Заменяем оригинальный файл, оставляя в нем только уникальные строчки */
+    /* Заменяем оригинальный файл, оставляя в нём только уникальные строчки */
     std::ofstream output_file(file_path, std::ios::trunc); // std::ios::trunc clears the file
     if (!output_file.is_open()) {
         std::cerr << "Error: Could not open file for writing!" << std::endl;

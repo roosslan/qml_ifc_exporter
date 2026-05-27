@@ -39,17 +39,20 @@ HEADERS += \
     backend.h \
     helper_funcs.h \
     named_pipe_client.h \
-    resources/ifc_exporter.rc
+    resources/ifc_exporter.rc \
+    sensitive_data.h
 
 DISTFILES += \
+    shared/RCheckBox.qml \
+    shared/RLabel.qml \
+    shared/SensitiveData.qml \
+    shared/TextField.qml \
     shared/UTimeDialog.qml  \
     shared/UTumbler.qml  \
     shared/UCard.qml    \
     shared/URect.qml    \
     shared/UTimePicker.qml  \
-    shared/LabelALDE.qml    \
     shared/CheckBox3DViews.qml \
-    shared/CheckBoxALDE.qml \
     shared/PlusButtonRow.qml    \
     shared/CustomBorderRect.qml \
     shared/JWDMDatePicker.qml \

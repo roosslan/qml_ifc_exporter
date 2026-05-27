@@ -29,8 +29,18 @@ property int top_offset: 10;
 property var id_row_additional_fields;
 property var rows_array: [{ str_hwnd: "", hwnd: QtObject, lv_row_index: 0, arrf_file_path: "", arrf_3dview_name: "",
         arrf_site_name: "", arrf_output_file_name: "", arrf_json_path: "", arrf_should_be_exported: true }];
-property var empty_array_structure: [{ str_hwnd: "", hwnd: QtObject, lv_row_index: 0, arrf_file_path: "", arrf_3dview_name: "",
-        arrf_site_name: "", arrf_output_file_name: "", arrf_json_path: "", arrf_should_be_exported: true }];
+
+property var empty_array_structure_template: {
+    str_hwnd: "";
+    hwnd: QtObject;
+    lv_row_index: 0;
+    arrf_file_path: "";
+    arrf_3dview_name: "";
+    arrf_site_name: "";
+    arrf_output_file_name: "";
+    arrf_json_path: "";
+    arrf_should_be_exported: true;
+}
 
 property string home_directory: "";
 property string selectedDate: new Date().toLocaleString(Qt.locale(),"dd.MM.yyyy");
@@ -42,6 +52,7 @@ signal signal_esc_key_pressed();
 signal signal_save_views_and_sites_to_file(sig_file_name: string, sig_view_name: string, sig_site_name: string,
                                            sig_output_file_name: string, sig_json_path: string, sig_should_be_exported: bool, sig_is_append: int);
 signal signal_clear_log_files();
+SensitiveData { id: sensitive_data; }
 
 Component.onCompleted: {
     /* array initialization, removing header line */
@@ -55,8 +66,13 @@ function stop_clicked() {
     items_enabled = true;
 }
 
+function show_message_box() {
+    message_dialog.open();
+}
+
 function clear_main_list() {
-    rows_array = empty_array_structure;
+    /* такой костыль по очистке массива, как и весь js */
+    rows_array = [ Object.assign( {}, empty_array_structure_template ) ];
     listModel.clear();
 }
 
@@ -135,7 +151,7 @@ function remove_subrow(objectName: string) {
     {
         if(rows_array[i].hwnd.objectName === objectName)
         {
-            try{
+            try {
                 rows_array.splice(i, 1);
                 console.log("Removing position");
             }
@@ -148,7 +164,7 @@ function remove_subrows(lvMainRowId: int) {   /* Удаляем все подп�
 
     for(var i = 0; i < rows_array.length; i++)
         if(rows_array[i].lv_row_index === lvMainRowId)
-            try{
+            try {
                 (rows_array[i].hwnd).destroy();
             }
             catch(error){}
@@ -229,7 +245,7 @@ Rectangle {
         TextField {
             id: rsnEditBox;
             width: btnAddLocalProject.width-50;
-            text: "RSN://ALD-VM-REVIT01/Projects/"
+            text: sensitive_data.revit_server_hostname;
         }
     }
 
@@ -285,7 +301,7 @@ Rectangle {
         borderColor: "black";
     }
 
-    LabelALDE {
+    RLabel {
         id: labelLog;
         x: 1000;
         anchors.top: btnAddLocalProject.top;
@@ -637,7 +653,7 @@ Rectangle {
 
 /************************************* Настройки экспорта ************************************/
 
-    LabelALDE {
+    RLabel {
         id: labelExportSettings;
         x: 35
         anchors.top: borderRect.bottom;
@@ -678,7 +694,7 @@ Rectangle {
         anchors.left: borderRect.left;
         anchors.topMargin: 5;
 
-        LabelALDE {
+        RLabel {
             id: labelRevitVersion;
             anchors.top: labelExportSettings.bottom;
             text: "Версия Revit:";
@@ -702,7 +718,7 @@ Rectangle {
 
 /****************************************** sav-файл ******************************************/
 
-        LabelALDE {
+        RLabel {
             id: label_sav_file;
             anchors.top: labelExportSettings.bottom;
             anchors.leftMargin: 110;
@@ -801,7 +817,7 @@ Rectangle {
         anchors.top: horizRow.bottom;
         anchors.topMargin: 25;
         x: 90;
-        LabelALDE {
+        RLabel {
             id: labelTime;
             text: "Время выгрузки";
         }
@@ -828,11 +844,11 @@ Rectangle {
         anchors.topMargin: 25;
         anchors.leftMargin: 25;
         x: 290;
-        LabelALDE {
+        RLabel {
             id: labelDateText;
             text: "Дата выгрузки: ";
         }
-        LabelALDE {
+        RLabel {
             id: labelDate;
             text: Qt.formatDateTime(new Date(), "dd.MM.yy" + "   ");
         }
@@ -874,7 +890,7 @@ Rectangle {
 
 /******************************* Industry Foundation Classes **********************************/
 
-    CheckBoxALDE {
+    RCheckBox {
         id: cbIFC;
         enabled: mainWindow.items_enabled;
         objectName: "cbIFC";
@@ -910,7 +926,7 @@ Rectangle {
         }
     }
 
-    LabelALDE {
+    RLabel {
         id: labelSelectDir;
         anchors.topMargin: 10;
         x: 20;
@@ -923,7 +939,7 @@ Rectangle {
         x: 30;
         anchors.topMargin: 5;
         anchors.top: labelSelectDir.bottom;
-        LabelALDE {
+        RLabel {
             id: labelIFCPath;
             objectName: "text_IFCPath";
             text: "C:\\Documents and Settings";
@@ -949,7 +965,7 @@ Rectangle {
 
 /******************************* Navisworks **********************************/
 
-    CheckBoxALDE {
+    RCheckBox {
         id: cbNavi;
         objectName: "cbNavi";
         enabled: items_enabled;
@@ -992,12 +1008,12 @@ Rectangle {
 
 /******************************* Navisworks **********************************/
 
-    LabelALDE {
+    RLabel {
         id: labelInfoPrio;
         anchors.topMargin: 30;
         x: 10;
         anchors.top: line_cb_Navi_col.bottom;
-        text: "* Площадка и вид берутся из Json, если не заполнены поля в списке";
+        text: "* При изменении файла выгрузки, файлы без отметки '3D' будут удалены из views_sites.sav";
     }
 
     /* Круг с вопросительным знаком */
@@ -1015,7 +1031,7 @@ Rectangle {
             enabled: false;
             anchors.centerIn: parent
             text: "?";
-            ToolTip.text: "Если не заполнены ни 3D-вид, ни преднастроечный json,\nбудет использоваться 3D-вид с именем Navisworks";
+            ToolTip.text: "При изменении файла выгрузки или добавлении нового, файлы без отметки '3D' будут удалены из предыдущего списка";
             ToolTip.visible: hovered;
             width: 20;
             height: 20;
@@ -1053,6 +1069,14 @@ Rectangle {
         }
     }
 }
+
+    MessageDialog {
+        id: message_dialog;
+        title: "Information";
+        text: "The operation completed successfully.";
+        buttons: MessageDialog.Ok;
+        /* onAccepted: console.log("clicked OK"); */
+    }
 
 property var splashWindow: Window {
     id: splash;
