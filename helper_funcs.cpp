@@ -20,7 +20,7 @@ void remove_duplicate_lines_from_file(const std::string& file_path) {
     input_file.close();
 
     /* Заменяем оригинальный файл, оставляя в нём только уникальные строчки */
-    std::ofstream output_file(file_path, std::ios::trunc); // std::ios::trunc clears the file
+    std::ofstream output_file(file_path, std::ios::trunc); /* std::ios::trunc clears the file */
     if (!output_file.is_open()) {
         std::cerr << "Error: Could not open file for writing!" << std::endl;
         return;
@@ -32,12 +32,11 @@ void remove_duplicate_lines_from_file(const std::string& file_path) {
     output_file.close();
 }
 
-QString get_env(const std::string &env_var){
+QString get_env(const std::string &env_var) {
     QString rret = "";
     char* buf = nullptr;
     size_t sz = 0;
-    if (_dupenv_s(&buf, &sz, env_var.c_str()) == 0 && buf != nullptr)
-    {
+    if (_dupenv_s(&buf, &sz, env_var.c_str()) == 0 && buf != nullptr) {
         rret = buf;
         free(buf);
     }
@@ -50,15 +49,5 @@ std::string to_lower(const std::string& str) {
                    [](unsigned char c) { return std::tolower(c); });
     return result;
 }
-std::string get_fullpath_by_filename(const std::list<std::string>& v_full_paths, const QString& filename) {
-    std::string lowerFilename = to_lower(filename.toStdString());
 
-    auto it = std::find_if(v_full_paths.begin(), v_full_paths.end(),
-                           [&lowerFilename](const std::string& fullPath) {
-                               return to_lower(std::filesystem::path(fullPath).filename().string())
-                               == lowerFilename;
-                           });
-
-    return (it != v_full_paths.end()) ? *it : "";
-}
 

@@ -7,7 +7,6 @@
 #include "simpleini.h"
 #include "helper_funcs.h"
 #include <windows.h>
-
 #include <qqml.h>
 #include <QObject>
 #include <QString>
@@ -22,7 +21,8 @@
 #include <qclipboard.h>
 #include <QtQuick>
 
-class ExportQuickView; /* forward declaration */
+/* forward declaration */
+class ExportQuickView;
 
 typedef QList<std::pair<QString, QString> > QKeysValues;
 
@@ -41,6 +41,7 @@ class BackEnd : public QObject
     Q_OBJECT
     QML_ELEMENT
     QGuiApplication* m_window_;
+    ExportQuickView* m_qview_;
     QTcpSocket m_tcp_socket_;
     QObject *m_item;
     HWND m_hwnd_;
@@ -53,6 +54,7 @@ class BackEnd : public QObject
     CSimpleIniW m_config_file_;
 
     QSet<QTcpSocket*> m_connection_set_;
+    const QString ifc_exporter_directory = QDir::homePath() + "/AppData/Roaming/" + qml_app_directory;
 signals:
     void new_message(const QString);
 private slots:
@@ -62,16 +64,15 @@ private slots:
     void discard_socket();
     void display_error(QAbstractSocket::SocketError socket_error);
     void display_log_message(const QString& qstr_msg);
-
 public:
-    BackEnd(QGuiApplication *parent, QObject* item, HWND hwnd);
+    BackEnd(QGuiApplication *parent, QObject* item, ExportQuickView* qview);
     ~BackEnd();
     QString inf_file = m_app_data_ + app_directory + "\\ifcexprt.inf";
-    QString views_and_sites_file = m_app_data_ + app_directory + "\\views_sites.sav";
+    QString views_and_sites_file = "views_sites.sav";
     std::list<std::string> v_sav_files;
     void fill_combobox_sav_files();
     void load_sav_file_into_main_list(const QString &sav_file);
-    Q_INVOKABLE void on_sav_combo_changed(int index, const QString &file_name, QString full_path);
+    Q_INVOKABLE void on_sav_combo_changed(bool remove_from_combobox, const QString &file_name, QString full_name);
 
     const bool str2bool(const QString& bool_as_str);
 
@@ -83,9 +84,10 @@ public:
     QString read_inf_string(const QString& section_name, const QString& key_name);
     void write_inf_string(const QString& section_name, const QString& key_name, const QString& value);
     void delete_inf_section(const QString& section_name);
-
+    void delete_inf_key_by_value(const QString& section_name, const QString& value);
 public slots:
     void slot_esc_pressed();
+    void slot_window_blink();
     void slot_stop_clicked();
     void slot_copy_to_clipboard_pressed();
     void slot_run_clicked(const int right_now, const QString &utime, const QString &udate);

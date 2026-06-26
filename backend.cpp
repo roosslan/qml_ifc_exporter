@@ -18,26 +18,11 @@
 #include <sstream>
 #include "named_pipe_client.h"
 
-/*
-std::list<QString> BackEnd::get_all_keys_of_section(const QString section_name)
-{
-    std::list<QString> rret;
-    m_config_file_.SetUnicode();
-    CSimpleIniW::TNamesDepend key_list;
-    const SI_Error rc = m_config_file_.LoadFile(inf_file.toStdString().c_str());
-    const bool res = m_config_file_.GetAllKeys(section_name.toStdWString().c_str(), key_list);
-    foreach (const auto key, key_list) {
-        rret.push_back(QString::fromWCharArray(key.pItem).trimmed());
-    }
-    return rret;
-}
-*/
-
-BackEnd::BackEnd(QGuiApplication *parent, QObject* item, HWND hwnd)
-{
+BackEnd::BackEnd(QGuiApplication *parent, QObject* item, ExportQuickView* qview) {
     m_window_ = parent;
     m_item = item;
-    m_hwnd_ = hwnd;
+    m_hwnd_ = (HWND)qview->winId();
+    m_qview_ = qview;
 
     const std::uint32_t int_hwnd = reinterpret_cast<std::uint32_t>(m_hwnd_);
 
@@ -53,33 +38,31 @@ BackEnd::BackEnd(QGuiApplication *parent, QObject* item, HWND hwnd)
 
     QString qtcp_port = read_inf_string("Manufacturer", "tcp_port");
     int tcp_port = qtcp_port.toInt();
-    if (!m_server->listen(QHostAddress::Any, tcp_port))
-    {
+
+    display_log_message("| Подключаемся к bgHelper для отображения лога...");
+
+    if (!m_server->listen(QHostAddress::Any, tcp_port)) {
         qDebug() << "Unable to start QTcp server: " << m_server->errorString();
-        display_log_message(m_server->errorString());
+        display_log_message("| Лог bgHelper не выведется! " + m_server->errorString() + "; TCP port " + qtcp_port);
         m_server->close();
     }
-    else
-    {
+    else {
         qDebug() << "QTcp server started";
         connect(this, &BackEnd::new_message, this, &BackEnd::display_log_message);
         connect(m_server, &QTcpServer::newConnection, this, &BackEnd::new_socket_connection);
     }
 }
 
-BackEnd::~BackEnd()
-{
+BackEnd::~BackEnd() {
     /* configFile.Reset(); */
 }
 
-void BackEnd::new_socket_connection()
-{
+void BackEnd::new_socket_connection() {
     while (m_server->hasPendingConnections())
         append_to_socket_list(m_server->nextPendingConnection());
 }
 
-void BackEnd::append_to_socket_list(QTcpSocket* socket)
-{
+void BackEnd::append_to_socket_list(QTcpSocket* socket) {
     m_connection_set_.insert(socket);
     connect(socket, &QTcpSocket::readyRead, this, &BackEnd::read_socket);
     connect(socket, &QTcpSocket::disconnected, this, &BackEnd::discard_socket);
@@ -89,8 +72,7 @@ void BackEnd::append_to_socket_list(QTcpSocket* socket)
     display_log_message(QString("| Фоновой процесс %1 запуска Revit подключен!").arg(socket->socketDescriptor()));
 }
 
-void BackEnd::discard_socket()
-{
+void BackEnd::discard_socket() {
     QTcpSocket* q_socket = reinterpret_cast<QTcpSocket*>(sender());
     const QSet<QTcpSocket*>::iterator it = m_connection_set_.find(q_socket);
     if (it != m_connection_set_.end()) {
@@ -101,8 +83,7 @@ void BackEnd::discard_socket()
     q_socket->deleteLater();
 }
 
-void BackEnd::read_socket()
-{
+void BackEnd::read_socket() {
     QTcpSocket* q_socket = reinterpret_cast<QTcpSocket*>(sender());
     QByteArray qmessage = q_socket->readAll(); /* Read message */
 
@@ -113,8 +94,7 @@ void BackEnd::read_socket()
     display_log_message("bgHelper | " + QString::fromStdString(display_log_msg));
 }
 
-void BackEnd::display_error(QAbstractSocket::SocketError socket_error)
-{
+void BackEnd::display_error(QAbstractSocket::SocketError socket_error) {
     switch (socket_error) {
     case QAbstractSocket::RemoteHostClosedError:
         break;
@@ -132,8 +112,7 @@ void BackEnd::display_error(QAbstractSocket::SocketError socket_error)
 }
 
 /* Adds and displays a message in the LOG-listbox */
-void BackEnd::display_log_message(const QString& qstr_msg)
-{
+void BackEnd::display_log_message(const QString& qstr_msg) {
     const QQuickItem* lv_log = m_item->findChild<QQuickItem*>("o_lvLog");
     QObject* lm_log = lv_log->children()[1];
     QVariant returned_value;
@@ -149,24 +128,23 @@ void BackEnd::display_log_message(const QString& qstr_msg)
         const QString app_data = get_env("appdata");
         if (QFile::exists(app_data + app_directory + "\\msg_on_finish")) {
 
+            m_qview_->requestActivate();
+
             QMetaObject::invokeMethod(m_item, "show_message_box",
                                       Q_RETURN_ARG(QVariant, returned_value));
         }
     }
 }
 
-void BackEnd::slot_copy_to_clipboard_pressed()
-{
+void BackEnd::slot_copy_to_clipboard_pressed() {
     QClipboard *clipboard = QGuiApplication::clipboard();
     QString text_for_clipboard = "";
     const QQuickItem* lv_log = m_item->findChild<QQuickItem*>("o_lvLog");
     QObject* lm_log = lv_log->children()[1];
     QAbstractListModel* qml_log_model = qobject_cast<QAbstractListModel*>(lm_log);
 
-    if (qml_log_model != nullptr)
-    {
-        for (int i = 0; i < qml_log_model->rowCount(); ++i)
-        {
+    if (qml_log_model != nullptr) {
+        for (int i = 0; i < qml_log_model->rowCount(); ++i) {
             const QString log_line = qml_log_model->data(qml_log_model->index(i, 0), 0).toString();
             text_for_clipboard += log_line + "\n";
         }
@@ -175,14 +153,12 @@ void BackEnd::slot_copy_to_clipboard_pressed()
 }
 
 /* Вызывается из .qml - btnStop::onClicked */
-void BackEnd::slot_stop_clicked()
-{
+void BackEnd::slot_stop_clicked() {
     write_inf_string("ControlFlags", "Enabled", "false");
     qDebug() << "The control flag 'Enabled' was set to false";
 }
 
-void BackEnd::delete_inf_section(const QString& section_name)
-{
+void BackEnd::delete_inf_section(const QString& section_name) {
     /* Так как все INI-файлы для WritePrivateProfileStringW всегда ANSI, пишем сами - как UTF8 с русскими символами */
     m_config_file_.SetUnicode();
     SI_Error rc = m_config_file_.LoadFile(inf_file.toStdString().c_str());
@@ -192,8 +168,28 @@ void BackEnd::delete_inf_section(const QString& section_name)
     rc = m_config_file_.SaveFile(inf_file.toStdString().c_str(), false);
 }
 
-void BackEnd::write_inf_string(const QString& section_name, const QString& key_name, const QString& value)
-{
+void BackEnd::delete_inf_key_by_value(const QString& section_name, const QString& value) {
+
+    const QKeysValues vsav_files_list = get_section_keys_and_values(section_name);
+
+    QString key_to_remove = "";
+
+    if (!vsav_files_list.empty())
+        /* first - GUID, second - sav-file name  */
+        foreach (const auto qpair, vsav_files_list) {
+            if (value == qpair.second)
+                key_to_remove = qpair.first;
+        }
+
+    if (key_to_remove != "") {
+        m_config_file_.SetUnicode();
+        SI_Error rc = m_config_file_.LoadFile(inf_file.toStdString().c_str());
+        m_config_file_.Delete(section_name.toStdWString().c_str(), key_to_remove.toStdWString().c_str());
+        rc = m_config_file_.SaveFile(inf_file.toStdString().c_str(), false);
+    }
+}
+
+void BackEnd::write_inf_string(const QString& section_name, const QString& key_name, const QString& value) {
     /* Так как все INI-файлы для WritePrivateProfileStringW всегда ANSI, пишем сами - как UTF8 с русскими символами */
     m_config_file_.SetUnicode();
     SI_Error rc = m_config_file_.LoadFile(inf_file.toStdString().c_str());
@@ -204,8 +200,7 @@ void BackEnd::write_inf_string(const QString& section_name, const QString& key_n
     rc = m_config_file_.SaveFile(inf_file.toStdString().c_str(), false);
 }
 
-QString BackEnd::read_inf_string(const QString& section_name, const QString& key_name)
-{
+QString BackEnd::read_inf_string(const QString& section_name, const QString& key_name) {
     m_config_file_.SetUnicode();
     SI_Error rc = m_config_file_.LoadFile(inf_file.toStdString().c_str());
     /* if (rc < 0){ qDebug() << "Cannot open INF-file " << infFile; }; */
@@ -216,20 +211,18 @@ QString BackEnd::read_inf_string(const QString& section_name, const QString& key
 }
 
 /* Для загрузки всего содержимого секции [SourceDisksFiles] */
-QKeysValues BackEnd::get_section_keys_and_values(const QString& section_name)
-{
+QKeysValues BackEnd::get_section_keys_and_values(const QString& section_name) {
     QKeysValues rret;
     m_config_file_.SetUnicode();
 
     qDebug() << "Checking if the section [SourceDisksFiles] exists in the .inf file";
     const SI_Error rc = m_config_file_.LoadFile(inf_file.toStdString().c_str());
-    if(!m_config_file_.SectionExists(section_name.toStdWString().c_str())){
+    if(!m_config_file_.SectionExists(section_name.toStdWString().c_str())) {
         const QKeysValues qkv_nullptr_list = {};
         return qkv_nullptr_list;
     }
     auto keys_n_values = m_config_file_.GetSection(section_name.toStdWString().c_str());
-    foreach (const auto& key_val, *keys_n_values)
-    {
+    foreach (const auto& key_val, *keys_n_values) {
         std::pair<QString, QString> qpair;
         qpair.first = QString::fromWCharArray(key_val.first.pItem).trimmed();
         qpair.second = QString::fromWCharArray(key_val.second).trimmed();
@@ -238,8 +231,7 @@ QKeysValues BackEnd::get_section_keys_and_values(const QString& section_name)
     return rret;
 }
 
-const bool BackEnd::str2bool(const QString& bool_as_str)
-{
+const bool BackEnd::str2bool(const QString& bool_as_str) {
     bool bret;
     std::istringstream(bool_as_str.toStdString()) >> std::boolalpha >> bret;
     return bret;
@@ -249,8 +241,7 @@ const bool BackEnd::str2bool(const QString& bool_as_str)
  * Парсим в vector строки (вьюхи/площадки) вида
  * C:/Для экспорта IFC/АР3_проект.rvt = 3dViewNavisworks = Площадка1 = ВыходноеИмяФайла = jsonСконфигурацией = Экспорт?true/false
  */
-std::vector<to_restore> BackEnd::get_all_keys_and_values_of_file(const QString& file_name)
-{
+std::vector<to_restore> BackEnd::get_all_keys_and_values_of_file(const QString& file_name) {
     to_restore line_to_restore;
     std::vector<to_restore> rret;
 
@@ -282,80 +273,100 @@ std::vector<to_restore> BackEnd::get_all_keys_and_values_of_file(const QString& 
 /* ф-ция bool2str - эдакая альтернатива std::boolalpha */
 inline const char * const bool2str(bool bval){ return bval ? "true" : "false"; }
 
-void BackEnd::slot_save_views_and_sites_to_file(const QString& fname, const QString& view_name, const QString& site_name,
-                                                const QString& output_file_name, const QString& json_file_path, const bool should_be_exported, const int append_mode)
+void BackEnd::slot_save_views_and_sites_to_file(
+    const QString& fname,
+    const QString& view_name,
+    const QString& site_name,
+    const QString& output_file_name,
+    const QString& json_file_path,
+    const bool should_be_exported,
+    const int append_mode)
 {
     QIODeviceBase::OpenModeFlag write_mode = QIODevice::WriteOnly;
-    QFile sav_file(views_and_sites_file);
+    QFile sav_file(ifc_exporter_directory + "/" + views_and_sites_file);
     /* Если append_mode == -1, то очищаем файл */
     if (append_mode == -1)
         sav_file.resize(0);
-    else
-    {
+    else {
         /* Если append_mode == 0, то создаем файл заново */
         if (append_mode)
             write_mode = QIODevice::Append;
         if (fname != "" && sav_file.open(write_mode)) {
+
             QTextStream text_stream(&sav_file);
-            text_stream << fname.trimmed() << " = " << view_name.trimmed() << " = " << site_name.trimmed() << " = " << output_file_name.trimmed() << " = " << json_file_path.trimmed() << " = " << bool2str(should_be_exported) << "\n";
+            text_stream << fname.trimmed() << " = " <<
+                           view_name.trimmed() << " = " <<
+                           site_name.trimmed() << " = " <<
+                           output_file_name.trimmed() << " = " <<
+                           json_file_path.trimmed() << " = " <<
+                           bool2str(should_be_exported) << "\n";
+
             sav_file.close();
         }
     }
     remove_duplicate_lines_from_file(views_and_sites_file.toStdString());
 }
 
-void BackEnd::on_sav_combo_changed(int index, const QString &file_name, QString full_path) {
+void BackEnd::on_sav_combo_changed(bool remove_from_combobox, const QString &file_name, QString full_name) {
 
-    QVariant returned_value;
+delete_inf_section("SourceDisksFiles");
 
-    delete_inf_section("SourceDisksFiles");
+if (!remove_from_combobox){
 
-    /* Если full_path пустой, значит просто выбрали другую позицию в combobox'e */
-    if (full_path == "") {
-        full_path = QString::fromStdString(get_fullpath_by_filename(v_sav_files, file_name));
-        write_inf_string("Manufacturer", "sav_file_for_export", full_path);
-        views_and_sites_file = full_path;
+    /* Если full_name пустое, значит просто выбрали другую позицию в combobox'e */
+    if (full_name == "") {
+        write_inf_string("Manufacturer", "sav_file_for_export", file_name);
+        views_and_sites_file = file_name;
         load_sav_file_into_main_list(views_and_sites_file);
     }
     else /* иначе - добавили новый sav-файл */
     try {
-        views_and_sites_file = full_path;
+        views_and_sites_file = full_name;
 
-        v_sav_files.push_back(full_path.toStdString());
+        v_sav_files.push_back(full_name.toStdString());
         QUuid random_guid = QUuid::createUuid();
         QString key_name = random_guid.toString();
 
-        write_inf_string("Manufacturer", "sav_file_for_export", full_path);
-        write_inf_string("SourceDisksNames.amd64", key_name, full_path);
+        write_inf_string("Manufacturer", "sav_file_for_export", file_name);
+        if (file_name != "views_sites.sav")
+            write_inf_string("SourceDisksNames.amd64", key_name, file_name);
 
         load_sav_file_into_main_list(views_and_sites_file);
     }
     catch(std::exception ex) {
         qDebug() << ex.what();
     }
+ }
+/* remove_from_combobox = true, нажали "Удалить" конфигурацию */
+else {
+    delete_inf_key_by_value("SourceDisksNames.amd64", file_name);
+    write_inf_string("Manufacturer", "sav_file_for_export", "views_sites.sav");
+    load_sav_file_into_main_list("views_sites.sav");
+ }
 }
 
 void BackEnd::load_sav_file_into_main_list(const QString &sav_file){
 
     QVariant returned_value;
+    /* Очищаем в QML основной массив, содержащий вьюхи, 3D-виды etc */
     QMetaObject::invokeMethod(m_item, "clear_main_list",
                               Q_RETURN_ARG(QVariant, returned_value));
 
     const QKeysValues v_files_list = get_section_keys_and_values("SourceDisksFiles");
     to_restore line_to_restore;
-    const std::vector<to_restore> v_views_n_sites = get_all_keys_and_values_of_file(sav_file);
+    const std::vector<to_restore> v_views_n_sites = get_all_keys_and_values_of_file(ifc_exporter_directory + "/" + sav_file);
 
     int list_index_to_add = -1;
 
     if (!v_files_list.empty())
-        foreach (const auto qpair, v_files_list) { /* first - fname, second - bool_as_str "should_be_exported?" */
+        /* first - fname, second - bool_as_str "should_be_exported?" */
+        foreach (const auto qpair, v_files_list) {
             /* Добавляем в список обыкновенные RVT, без вьюх и площадок */
             const auto it = std::find_if(v_views_n_sites.begin(), v_views_n_sites.end(),
                                          [&qpair](const to_restore& item) {
                                              return item.fname == qpair.first; /* fname */
-                                         });
-            if (it == v_views_n_sites.end())
-            {
+                                        });
+            if (it == v_views_n_sites.end()) {
                 auto fname = qpair.first;
                 bool should_exported = str2bool(qpair.second);
                 QMetaObject::invokeMethod(m_item, "add_row_from_cpp",
@@ -369,8 +380,7 @@ void BackEnd::load_sav_file_into_main_list(const QString &sav_file){
     QString last_added_fname = "";
     /* Добавляем в список всё остальное, эти файлы уже с указанными вьюхами или площадками */
     if(!v_views_n_sites.empty())
-        foreach (const auto line_to_restore, v_views_n_sites)
-        {
+        foreach (const auto line_to_restore, v_views_n_sites) {
             if (last_added_fname == line_to_restore.fname)
                 QMetaObject::invokeMethod(m_item, "add_subrow_wrapper",
                                           Q_RETURN_ARG(QVariant, returned_value),
@@ -379,8 +389,7 @@ void BackEnd::load_sav_file_into_main_list(const QString &sav_file){
                                           Q_ARG(const QString, line_to_restore.site),
                                           Q_ARG(const QString, line_to_restore.outputfname),
                                           Q_ARG(const QString, line_to_restore.jsonpath));
-            else
-            {
+            else {
                 ++list_index_to_add;
                 QMetaObject::invokeMethod(m_item, "add_row_w_subrows_from_cpp",
                                           Q_RETURN_ARG(QVariant, returned_value),
@@ -397,7 +406,7 @@ void BackEnd::load_sav_file_into_main_list(const QString &sav_file){
         }
 }
 
-void BackEnd::fill_combobox_sav_files(){
+void BackEnd::fill_combobox_sav_files() {
     QVariant returned_value;
     /* sav'ы добавляем в выпадающий список */
     m_config_file_.SetUnicode();
@@ -406,7 +415,7 @@ void BackEnd::fill_combobox_sav_files(){
 
     const CSimpleIniW::TKeyVal* sav_files = m_config_file_.GetSection(section_name.toStdWString().c_str());
     auto sav_map = sav_files[0];
-    for (const auto& item : sav_map){
+    for (const auto& item : sav_map) {
         const wchar_t* ws_sav_file_path = static_cast<const wchar_t*>(item.second);
         QString sav_file_path = QString::fromWCharArray(ws_sav_file_path);
 
@@ -418,7 +427,7 @@ void BackEnd::fill_combobox_sav_files(){
     }
 }
 
-void clr_logfile(const QString &fpath){
+void clr_logfile(const QString &fpath) {
     std::ofstream ofs;
     ofs.open(fpath.toStdString(), std::ofstream::out | std::ofstream::trunc);
     ofs.close();
@@ -428,6 +437,7 @@ void BackEnd::slot_clear_log_files() {
     clr_logfile(app_data + qt_log);
     clr_logfile(app_data + addin_log);
     clr_logfile(app_data + bg_helper_log);
+    display_log_message("| Файлы журналов очищены");
 }
 
 void BackEnd::slot_run_clicked(const int right_now, const QString& utime, const QString& udate){
@@ -474,25 +484,33 @@ void BackEnd::slot_run_clicked(const int right_now, const QString& utime, const 
     write_inf_string("ControlFlags", "Enabled", "true");
     qDebug() << "The control flag 'Enabled' was set to true";
 
-    if(right_now) {   /* Запустить ПРЯМО сейчас! == 1 */
+    /* Запустить ПРЯМО сейчас! == 1 */
+    if(right_now) {
         pipe_client* local_pipe = new pipe_client("\\\\.\\pipe\\bghelperpipe", this);
+
+        /* Чтобы не происходил повторный запуск (уже по совпадению даты/времени) */
+        write_inf_string("ControlFlags", "Date", "21.06.2026");
+
         local_pipe->send_message_to_server("START_IMMEDIATELY");
     }
 }
 
-void BackEnd::slot_esc_pressed(){
+void BackEnd::slot_esc_pressed() {
     /* TODO: добавить вопросительное окно? */
     m_window_->exit(0);
 }
 
+void BackEnd::slot_window_blink() {
+    m_qview_->requestActivate();
+}
+
+
 void bgMessageHandler(QtMsgType type, const QMessageLogContext &, const QString & msg){
     QString txt;
-    switch (type)
-    {
+    switch (type) {
     case QtDebugMsg:
         txt = QString("export: %1").arg(msg);
         break;
-
     /*  case QtWarningMsg:
         txt = QString("Warning: %1").arg(msg);
         break;
@@ -513,8 +531,7 @@ void bgMessageHandler(QtMsgType type, const QMessageLogContext &, const QString 
     const QString log_file_location = app_directory +"\\" + file_name;
     QFile out_file(app_data + log_file_location);
 
-    if (txt != "" && !msg.startsWith("QML Debugger: Waiting for connection on port") )
-    {
+    if (txt != "" && !msg.startsWith("QML Debugger: Waiting for connection on port") ) {
         out_file.open(QIODevice::WriteOnly | QIODevice::Append);
         QTextStream ss_ts(&out_file);
         ss_ts << QTime::currentTime().toString() << " " << txt << Qt::endl;
@@ -522,8 +539,7 @@ void bgMessageHandler(QtMsgType type, const QMessageLogContext &, const QString 
 }
 
 /*
-void BackEnd::slot_btn_ifc_settings_clicked()
-{
+void BackEnd::slot_btn_ifc_settings_clicked() {
     Передаем окну IFCSettings наш handle, чтобы диалог ifc_settings показался модально
     QStringList args;
 
