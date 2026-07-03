@@ -64,7 +64,7 @@ int main (int argc, char* argv[])
     const int window_width = 1300;
     const int window_height = 870;
 
-    QGuiApplication qgui_app(argc, argv);
+    QGuiApplication qgui_app(argc, argv);    
 
     auto local_qml_file = QCoreApplication::applicationDirPath() + "/main.qml";
 
@@ -84,13 +84,14 @@ int main (int argc, char* argv[])
 
     QObject *item = q_view.rootObject();
 
-    BackEnd backend_rula(&qgui_app, item, (HWND)q_view.winId());
+    BackEnd backend_rula(&qgui_app, item, &q_view);
     q_view.backend_ruler = &backend_rula;
 
     /* Передаем экземпляр класса в Qml: */
     q_view.rootContext()->setContextProperty("backend", &backend_rula);
 
     QObject::connect(item, SIGNAL(signal_esc_key_pressed()), &backend_rula, SLOT(slot_esc_pressed()));
+    QObject::connect(item, SIGNAL(signal_window_blink()), &backend_rula, SLOT(slot_window_blink()));
     QObject::connect(item, SIGNAL(signal_stop_clicked()), &backend_rula, SLOT(slot_stop_clicked()));
     QObject::connect(item, SIGNAL(signal_copy_to_clipboard_clicked()), &backend_rula, SLOT(slot_copy_to_clipboard_pressed()));
 
@@ -109,7 +110,7 @@ int main (int argc, char* argv[])
     backend_rula.fill_combobox_sav_files();
 
    /* Следующий код передает в QML системные переменные наподобие $APPDATA */
-    item->setProperty("home_directory", QDir::homePath());
+    item->setProperty("ifc_exporter_directory", QDir::homePath() + "/AppData/Roaming/" + qml_app_directory);
 
     q_view.setIcon(QIcon("resources/ico.ico"));
 

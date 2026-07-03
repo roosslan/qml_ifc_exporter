@@ -16,7 +16,6 @@ id: mainWindow;
 width: 1300;
 height: 870;
 
-focus: true;
 Keys.onEscapePressed: esc_key_pressed();
 
 property bool items_enabled: true;
@@ -42,13 +41,14 @@ property var empty_array_structure_template: {
     arrf_should_be_exported: true;
 }
 
-property string home_directory: "";
+property string ifc_exporter_directory: "";
 property string selectedDate: new Date().toLocaleString(Qt.locale(),"dd.MM.yyyy");
 
 signal signal_stop_clicked();
 signal signal_copy_to_clipboard_clicked();
 signal signal_run_clicked(rightNow: int, utime: string, udate: string);
 signal signal_esc_key_pressed();
+signal signal_window_blink();
 signal signal_save_views_and_sites_to_file(sig_file_name: string, sig_view_name: string, sig_site_name: string,
                                            sig_output_file_name: string, sig_json_path: string, sig_should_be_exported: bool, sig_is_append: int);
 signal signal_clear_log_files();
@@ -63,6 +63,7 @@ Component.onCompleted: {
 function stop_clicked() {
     signal_stop_clicked();
     lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Процесс закрыт"});
+    lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Экспорт завершён"});
     items_enabled = true;
 }
 
@@ -73,6 +74,8 @@ function show_message_box() {
 function clear_main_list() {
     /* такой костыль по очистке массива, как и весь js */
     rows_array = [ Object.assign( {}, empty_array_structure_template ) ];
+    /* и снова удаляем wa_rows_array */
+    rows_array.splice(0, 1);
     listModel.clear();
 }
 
@@ -137,25 +140,21 @@ function add_row_w_subrows_from_cpp(lvMainRowId: int, filePath: string, _3dview_
 }
 
 function set_input_field_text(fieldName: string, objectName: string, text: string) {
-    for(var i = 0; i < rows_array.length; i++)
-    {
-        if(rows_array[i].hwnd.objectName === objectName)
-        {
+    for(var i = 0; i < rows_array.length; i++) {
+        if (rows_array[i].hwnd.objectName === objectName) {
             rows_array[i][fieldName] = text;
         }
     }
 }
 
 function remove_subrow(objectName: string) {
-    for(var i = 0; i < rows_array.length; i++)
-    {
-        if(rows_array[i].hwnd.objectName === objectName)
-        {
+    for (var i = 0; i < rows_array.length; i++) {
+        if (rows_array[i].hwnd.objectName === objectName) {
             try {
                 rows_array.splice(i, 1);
                 console.log("Removing position");
             }
-            catch(error){}
+            catch (error){}
         }
     }
 }
@@ -367,11 +366,11 @@ Rectangle {
                     }
                     else {
                         var uncheckedFilePath = listModel.get(index).path;
-                        for(var i = 0; i < rows_array.length; i++)
+                        for(var j = 0; j < rows_array.length; ++j)
                         {
-                            if(rows_array[i].arrf_file_path === uncheckedFilePath)
+                            if(rows_array[j].arrf_file_path === uncheckedFilePath)
                             {
-                                rows_array[i].arrf_should_be_exported = false;
+                                rows_array[j].arrf_should_be_exported = false;
                             }
                         }
 
@@ -442,7 +441,8 @@ Rectangle {
                                     _row.lv_row_index--;
                             });
                         }
-                        catch(error){ console.log(error)
+                        catch(error){
+                            console.log(error)
                         }
                     }
                 }
@@ -512,8 +512,9 @@ Rectangle {
         height: 760;
         width: 490;
         objectName: "o_lvLog";
-        clip: true; /* Чтобы динамически создаваемые контролы не вылезали за пределы ListView */
 
+        /* Чтобы динамически создаваемые контролы не вылезали за пределы ListView */
+        clip: true;
 
         ScrollBar.horizontal:  ScrollBar {
             id: hscroll_bar;
@@ -533,7 +534,7 @@ Rectangle {
             Text {
                 x: 5;
                 id: rowTxt;
-                text: msg
+                text: msg;
             }
 
         model: ListModel {
@@ -543,7 +544,7 @@ Rectangle {
             }
 
             function add_to_log_listview(caption) {
-                lmLogModel.append({"msg": new Date().toLocaleTimeString() + " " +caption});
+                lmLogModel.append({"msg": new Date().toLocaleTimeString() + " " + caption});
             }
         }
         onCountChanged: {
@@ -723,7 +724,7 @@ Rectangle {
             anchors.top: labelExportSettings.bottom;
             anchors.leftMargin: 110;
             anchors.left: cbVersion.right;
-            text: "Файл выгрузки:";
+            text: "Файл конфигурации:";
         }
 
         ComboBox {
@@ -743,11 +744,11 @@ Rectangle {
             }
             /* sav_file_choose_dialog и так вызывает on_sav_combo_changed
             onCountChanged: {
-                    backend.on_sav_combo_changed(currentIndex, currentValue, "");
+                    backend.on_sav_combo_changed(false, currentValue, "");
                 }
             */
             onActivated: {
-                backend.on_sav_combo_changed(currentIndex, currentValue, "");
+                backend.on_sav_combo_changed(false, currentValue, "");
             }
         }
 
@@ -763,7 +764,8 @@ Rectangle {
             MouseArea {
                 anchors.fill: parent;
                 onClicked: {
-                   sav_file_choose_dialog.open();
+                    sav_name_dialog.open();
+                    /* sav_file_choose_dialog.open(); */                    
                 }
             }
         }
@@ -771,7 +773,7 @@ Rectangle {
         Image {
             id: img_recyclebin;
             source: "resources/recycle_bin.png";
-            enabled: false;
+            enabled: items_enabled;
             anchors.left: the_plus_image.right;
             anchors.top: labelExportSettings.bottom;
             anchors.leftMargin: 10;
@@ -780,35 +782,59 @@ Rectangle {
             MouseArea {
                 anchors.fill: parent;
                 onClicked: {
-                   //cb_sav_file.
-                }
-            }
-        }
-
-        FileDialog {
-            id: sav_file_choose_dialog;
-            title: "Please choose a sav-file";
-            nameFilters: [".sav-files (*.sav)"];
-            onAccepted: {
-                var path = sav_file_choose_dialog.selectedFile.toString();
-                // remove prefixed "file:///"
-                path = path.replace(/^(file:\/{3})/,"");
-                // unescape html codes like '%23' for '#'
-                var file_name = path.toString().split('/').pop();
-
-                if (cb_sav_file.find(file_name) !== -1) {
-                    lmLogModel.add_to_log_listview("| Файл с таким именем уже был ранее добавлен в список!");
-                }
-                else {
-                    model_sav_file.append( { "text": decodeURIComponent(file_name) } );
-                    sav_file_choose_dialog.selectedFile = "";
-                    sav_file_choose_dialog.close();
-                    cb_sav_file.currentIndex = cb_sav_file.count - 1;
-                    backend.on_sav_combo_changed(cb_sav_file.currentIndex, cb_sav_file.currentValue, path);
+                    if (cb_sav_file.currentText === "views_sites.sav") {
+                        lmLogModel.add_to_log_listview("| Нельзя удалить встроенную конфигурацию!");
+                    }
+                    else {                        
+                        backend.on_sav_combo_changed(true, cb_sav_file.currentValue, "");
+                        model_sav_file.remove(cb_sav_file.currentIndex);
+                        cb_sav_file.currentIndex = 0;
+                    }
                 }
             }
         }
     }
+
+        Dialog {
+            id: sav_name_dialog;
+            title: "Введите имя конфигурации";
+            standardButtons: Dialog.Ok | Dialog.Cancel;
+            modal: true;
+            anchors.centerIn: parent;
+
+            onAccepted: {
+                if (cb_sav_file.find(edit_ctrl_sav_name.text) !== -1) {
+                    lmLogModel.add_to_log_listview("| Конфигурация с таким именем уже была ранее добавлена в список!");
+                }
+                else {
+                    model_sav_file.append( { "text": edit_ctrl_sav_name.text + ".sav"} );
+                    cb_sav_file.currentIndex = cb_sav_file.count - 1;
+                    backend.on_sav_combo_changed(false, cb_sav_file.currentValue, edit_ctrl_sav_name.text + ".sav");
+                    edit_ctrl_sav_name.text = "";
+                }
+                console.log("User entered: " + edit_ctrl_sav_name.text);
+            }
+
+            onRejected: {
+                edit_ctrl_sav_name.text = "";
+            }
+
+            /* Content of the dialog */
+            contentItem: Column {
+                spacing: 10;
+                width: parent.width;
+
+                TextField {
+                    id: edit_ctrl_sav_name;
+                    width: parent.width;
+
+                    Keys.onReturnPressed: {
+                        sav_name_dialog.accept();
+                    }
+                }
+            }
+        }
+
 /************************************* Время/Дата выгрузки ****************************************/
 
     Row {
@@ -1013,7 +1039,7 @@ Rectangle {
         anchors.topMargin: 30;
         x: 10;
         anchors.top: line_cb_Navi_col.bottom;
-        text: "* При изменении файла выгрузки, файлы без отметки '3D' будут удалены из views_sites.sav";
+        text: "* При изменении файла конфигурации, позиции без отметки '3D' будут удалены из файла";
     }
 
     /* Круг с вопросительным знаком */
@@ -1075,7 +1101,6 @@ Rectangle {
         title: "Information";
         text: "The operation completed successfully.";
         buttons: MessageDialog.Ok;
-        /* onAccepted: console.log("clicked OK"); */
     }
 
 property var splashWindow: Window {

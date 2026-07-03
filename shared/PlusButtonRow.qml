@@ -4,8 +4,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Dialogs
 
-Row
-{
+Row {
     id: rowItem;
     x: 18;
     property var parentRef;
@@ -16,8 +15,7 @@ Row
     property string plusBtnProp_outputFileNam;
     property string plusBtnProp_jsonFilePath;
 
-    TextField
-    {
+    TextField {
         id: tfViewField;
         width: 165;
         text: plusBtnProp_3dViewText;
@@ -27,8 +25,7 @@ Row
             rowItem.parentRef.set_input_field_text("arrf_3dview_name", parent.objectName, text);
         }
 
-        background: Rectangle
-        {
+        background: Rectangle {
             color: "transparent";
             border.width: 0;
             border.color: "gray"
@@ -45,15 +42,13 @@ Row
     }
 
     /* Разделитель между полями ввода */
-    Rectangle
-    {
+    Rectangle {
         color: "transparent";
         height: 1;
         width: 10;
     }
 
-    TextField
-    {
+    TextField {
         id: tfSiteField;
         width: 175;
         text: plusBtnProp_siteNam;
@@ -70,8 +65,7 @@ Row
 
             /* Remove specific borders by drawing only bottom line
              * Top, left, and right are transparent or width 0      */
-            Rectangle
-            {
+            Rectangle {
                 anchors.bottom: parent.bottom;
                 height: 1;
                 width: parent.width;
@@ -82,8 +76,7 @@ Row
         ContextMenu.menu: Menu {
                 MenuItem {
                     text: qsTr("Очистить")
-                    onTriggered:
-                    {
+                    onTriggered: {
                         tfSiteField.text = "";
                         tfSiteField.textChanged();
                     }
@@ -92,15 +85,13 @@ Row
     }
 
     /* Разделитель между полями ввода */
-    Rectangle
-    {
+    Rectangle {
         color: "transparent";
         height: 1;
         width: 10;
     }
 
-    TextField
-    {
+    TextField {
         id: tfOutputFileName;
         width: 145;
         text: plusBtnProp_outputFileNam;
@@ -127,15 +118,13 @@ Row
     }
 
     /* Разделитель между полями ввода */
-    Rectangle
-    {
+    Rectangle {
         color: "transparent";
         height: 1;
         width: 10;
     }
 
-    TextField
-    {
+    TextField {
         id: tfJsonFilePath;
         width: 155;
         text: plusBtnProp_jsonFilePath;
@@ -145,8 +134,7 @@ Row
             rowItem.parentRef.set_input_field_text("arrf_json_path", parent.objectName, text);
         }
 
-        background: Rectangle
-        {
+        background: Rectangle {
             color: "transparent";
             border.width: 0;
             border.color: "gray"
@@ -162,21 +150,18 @@ Row
         }
     }
 
-    RoundButton
-    {
+    RoundButton {
         text: "…"
         height: 18;
         width: 18;
          onClicked: fileSelectDialog.open();
     }
-    Rectangle
-    {
+    Rectangle {
         color: "transparent";
         height: 1;
         width: 10;
     }
-    RoundButton
-    {
+    RoundButton {
         text: "+"
         height: 18;
         width: 18;
@@ -188,8 +173,7 @@ Row
         }
     }
 
-    Image
-    {
+    Image {
         id: btnTrashCanImage;
         source: "resources/trash.png";
         visible: parent.trashcanVisible;
@@ -199,21 +183,18 @@ Row
         MouseArea
         {
             anchors.fill: parent;
-            onClicked:
-            {
+            onClicked: {
                 rowItem.parentRef.remove_subrow(parent.parent.objectName);
                 parent.parent.destroy();
             }
         }
     }
 
-    FileDialog
-    {
+    FileDialog {
         id: fileSelectDialog;
         title: "Please choose a file";
         nameFilters: ["JSON files (*.json)"];
-        onAccepted:
-        {
+        onAccepted: {
             var path = fileSelectDialog.selectedFile.toString();
             // remove prefixed "file:///"
             path = path.replace(/^(file:\/{3})/,"");

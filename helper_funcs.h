@@ -3,13 +3,15 @@
 
 #include <iostream>
 #include <fstream>
+#include <windows.h>
 #include <string>
+#include <thread>
+#include <atomic>
 #include <vector>
 #include <unordered_set>
 #include <algorithm>
 #include <filesystem>
 #include <cctype>
-
 #include <qstring.h>
 
 void remove_duplicate_lines_from_file(const std::string& filePath);

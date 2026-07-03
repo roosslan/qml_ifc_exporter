@@ -3,8 +3,8 @@
 IDI_ICON1               ICON    DISCARDABLE     "ico.ico"
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 5,11,5,26
- PRODUCTVERSION 5,11,5,26
+ FILEVERSION 7,6,22,26
+ PRODUCTVERSION 7,6,22,26
  FILEFLAGS 0x0L
  FILEFLAGSMASK 0x3fL
  FILEOS 0x00040004L
@@ -17,12 +17,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "rasa"
             VALUE "FileDescription", "ifc_exporter"
-            VALUE "FileVersion", "5.11.5.26"
+            VALUE "FileVersion", "7.6.22.26"
             VALUE "LegalCopyright", "Copyright (C) rasa 2022 - 2026"
             VALUE "InternalName", "ifc_exporter"
             VALUE "OriginalFilename", "ifc_exporter.exe"
             VALUE "ProductName", "ifc/nwc export tool"
-            VALUE "ProductVersion", "5.11.5.26"
+            VALUE "ProductVersion", "7.6.22.26"
         END
     END
     BLOCK "VarFileInfo"
