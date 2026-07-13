@@ -1,6 +1,5 @@
 /*
-  - rir 18.2.2026
-  - last changed 24.4.2026
+  - last changed 3.7.2026
  */
 
 import QtQuick
@@ -62,6 +61,7 @@ Component.onCompleted: {
 /* Обернул сигнал в ф-цию, чтобы вызывать его из backend */
 function stop_clicked() {
     signal_stop_clicked();
+    lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Если создать файл msg_on_finish в директории alabuga_dev, то по окончании экспорта выведется окно 'OK'"});
     lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Процесс закрыт"});
     lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Экспорт завершён"});
     items_enabled = true;
@@ -797,7 +797,7 @@ Rectangle {
 
         Dialog {
             id: sav_name_dialog;
-            title: "Введите имя конфигурации";
+            title: "Введите имя конфигурации:";
             standardButtons: Dialog.Ok | Dialog.Cancel;
             modal: true;
             anchors.centerIn: parent;
@@ -824,6 +824,19 @@ Rectangle {
                 spacing: 10;
                 width: parent.width;
 
+                TextInput {
+                    id: edit_ctrl_sav_name;
+                    focus: true
+                    width: parent.width;
+                    validator: RegularExpressionValidator {
+                        regularExpression: { /^[a-zA-Z0-9]*$/; }
+                    }
+                    inputMask: "NNNNNNNNNNNNNNNNNN";
+                    Keys.onReturnPressed: {
+                        sav_name_dialog.accept();
+                    }
+                }
+/*
                 TextField {
                     id: edit_ctrl_sav_name;
                     width: parent.width;
@@ -832,6 +845,7 @@ Rectangle {
                         sav_name_dialog.accept();
                     }
                 }
+*/
             }
         }
 
