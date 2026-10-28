@@ -1,4 +1,4 @@
-#include <windows.h>
+﻿#include <windows.h>
 #include <QtGui/QGuiApplication>
 
 #include <QtGui/QScreen>
@@ -66,23 +66,16 @@ int main (int argc, char* argv[])
 
     QGuiApplication qgui_app(argc, argv);    
 
-    auto local_qml_file = QCoreApplication::applicationDirPath() + "/main.qml";
-
-    const QUrl main_qml_file(QStringLiteral("../main.qml"));
-    QQmlApplicationEngine qqml_app_engine;
-    QObject::connect(&qqml_app_engine, &QQmlApplicationEngine::objectCreated,
-            &qgui_app, [main_qml_file](QObject *obj, const QUrl &obj_url)
-            {
-                if (!obj && main_qml_file == obj_url)
-                    QCoreApplication::exit(-1);
-
-            }, Qt::QueuedConnection);
-
     ExportQuickView q_view;
 
-    q_view.setSource(QUrl::fromLocalFile("../main.qml"));
+    /* QML и картинки вкомпилированы в ресурсы (ifc_exporter.qrc, shared/shared.qrc) */
+    q_view.setSource(QUrl(QStringLiteral("qrc:/main.qml")));
 
     QObject *item = q_view.rootObject();
+    if (item == nullptr) {
+        qCritical() << "Unable to load main.qml:" << q_view.errors();
+        return -1;
+    }
 
     BackEnd backend_rula(&qgui_app, item, &q_view);
     q_view.backend_ruler = &backend_rula;
@@ -112,7 +105,7 @@ int main (int argc, char* argv[])
    /* Следующий код передает в QML системные переменные наподобие $APPDATA */
     item->setProperty("ifc_exporter_directory", QDir::homePath() + "/AppData/Roaming/" + qml_app_directory);
 
-    q_view.setIcon(QIcon("resources/ico.ico"));
+    q_view.setIcon(QIcon(":/resources/ico.ico"));
 
     q_view.show();
 

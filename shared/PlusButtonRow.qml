@@ -175,7 +175,7 @@ Row {
 
     Image {
         id: btnTrashCanImage;
-        source: "resources/trash.png";
+        source: "../resources/trash.png";
         visible: parent.trashcanVisible;
         //x: 765;
         width: 18;

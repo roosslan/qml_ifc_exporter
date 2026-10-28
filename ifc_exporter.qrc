@@ -1,5 +1,9 @@
 <RCC>
     <qresource prefix="/">
         <file>main.qml</file>
+        <file>resources/ico.ico</file>
+        <file>resources/plus.png</file>
+        <file>resources/recycle_bin.png</file>
+        <file>resources/trash.png</file>
     </qresource>
 </RCC>

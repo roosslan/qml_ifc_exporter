@@ -1,6 +1,6 @@
-#include "helper_funcs.h"
+﻿#include "helper_funcs.h"
 
-void remove_duplicate_lines_from_file(const std::string& file_path) {
+void remove_duplicate_lines_from_file(const std::filesystem::path& file_path) {
     std::ifstream input_file(file_path);
     if (!input_file.is_open()) {
         std::cerr << "Error: Could not open file for reading!" << std::endl;

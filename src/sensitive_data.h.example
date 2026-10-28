@@ -1,0 +1,22 @@
+﻿/*
+ * Шаблон для src/sensitive_data.h (сам sensitive_data.h в git не хранится).
+ * При первом запуске qmake файл копируется в sensitive_data.h автоматически,
+ * после чего значения необходимо заменить на реальные.
+ */
+#ifndef SENSITIVE_DATA_H
+#define SENSITIVE_DATA_H
+
+#include <QString>
+
+/* Поддиректория в %APPDATA% (с ведущим "\\"): там лежат ifcexprt.inf, msg_on_finish, журналы */
+inline const QString app_directory = "\\ifc_exporter";
+
+/* Поддиректория в %APPDATA% (без ведущего разделителя): там лежат *.sav-файлы */
+inline const QString qml_app_directory = "ifc_exporter";
+
+/* Пути к файлам журналов относительно %APPDATA% */
+inline const QString qt_log        = app_directory + "\\qt.log";
+inline const QString addin_log     = app_directory + "\\addin.log";
+inline const QString bg_helper_log = app_directory + "\\bghelper.log";
+
+#endif // SENSITIVE_DATA_H
