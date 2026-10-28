@@ -1,9 +1,12 @@
 <RCC>
-    <qresource prefix="/qt/qml/shared">
+    <qresource prefix="/shared">
         <file>CheckBox3DViews.qml</file>
         <file>CustomBorderRect.qml</file>
         <file>JWDMDatePicker.qml</file>
+        <file>images/checkmark.png</file>
+        <file>images/clock.png</file>
         <file>images/qt-logo.png</file>
+        <file>images/v3d.png</file>
         <file>PlusButtonRow.qml</file>
         <file>RCheckBox.qml</file>
         <file>RLabel.qml</file>

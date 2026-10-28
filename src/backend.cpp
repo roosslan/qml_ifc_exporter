@@ -1,4 +1,4 @@
-/*
+﻿/*
 *  24.04.2025 Выбор версии IFC перенесен в отд. программу/окно
 *  24.4.2026, removed 60-chars dividing
 *  last changed 14.5.26
@@ -41,7 +41,7 @@ BackEnd::BackEnd(QGuiApplication *parent, QObject* item, ExportQuickView* qview)
 
     display_log_message("| Подключаемся к bgHelper для отображения лога...");
 
-    if (!m_server->listen(QHostAddress::Any, tcp_port)) {
+    if (!m_server->listen(QHostAddress::LocalHost, tcp_port)) {
         qDebug() << "Unable to start QTcp server: " << m_server->errorString();
         display_log_message("| Лог bgHelper не выведется! " + m_server->errorString() + "; TCP port " + qtcp_port);
         m_server->close();
@@ -255,7 +255,12 @@ std::vector<to_restore> BackEnd::get_all_keys_and_values_of_file(const QString& 
     while(!ss_in.atEnd()) {
         const QString q_line = ss_in.readLine();
         if (q_line != "") {
-            QStringList fields = q_line.split("=");
+            const QStringList fields = q_line.split("=");
+            /* Пропускаем повреждённые строки, иначе fields.at() выходит за границы */
+            if (fields.size() != 6) {
+                qDebug() << "Skipping malformed line in" << file_name << ":" << q_line;
+                continue;
+            }
             line_to_restore.fname = fields.at(0).trimmed();
             line_to_restore.view = fields.at(1).trimmed();
             line_to_restore.site = fields.at(2).trimmed();
@@ -304,7 +309,8 @@ void BackEnd::slot_save_views_and_sites_to_file(
             sav_file.close();
         }
     }
-    remove_duplicate_lines_from_file(views_and_sites_file.toStdString());
+    /* Путь передаём как std::filesystem::path: в нём может быть кириллица */
+    remove_duplicate_lines_from_file(std::filesystem::path(sav_file.fileName().toStdWString()));
 }
 
 void BackEnd::on_sav_combo_changed(bool remove_from_combobox, const QString &file_name, QString full_name) {
@@ -414,8 +420,10 @@ void BackEnd::fill_combobox_sav_files() {
     QString section_name = "SourceDisksNames.amd64";
 
     const CSimpleIniW::TKeyVal* sav_files = m_config_file_.GetSection(section_name.toStdWString().c_str());
-    auto sav_map = sav_files[0];
-    for (const auto& item : sav_map) {
+    /* При первом запуске секции в .INF ещё нет */
+    if (sav_files == nullptr)
+        return;
+    for (const auto& item : *sav_files) {
         const wchar_t* ws_sav_file_path = static_cast<const wchar_t*>(item.second);
         QString sav_file_path = QString::fromWCharArray(ws_sav_file_path);
 

@@ -1,46 +1,53 @@
-# last changed 12.5.2026
+# last changed 16.10.2026
 
 TARGET = ifc_exporter
 
 TEMPLATE = app
 
-QT += quick qml widgets core gui quickcontrols2
+QT += quick qml widgets core gui quickcontrols2 network
 CONFIG += c++20 \
     static
 static {
 # Everything below takes effect with CONFIG += static
     CONFIG += static
-    QTPLUGIN += qsqloci qgif
+    QTPLUGIN += qgif
     DEFINES += STATIC
 # Equivalent to "#define STATIC" in source code
     message("Static build.")
 }
 
-INCLUDEPATH += C:\Program Files (x64)\Qt\6.10.0\msvc2022_64\include \
-                C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC\14.44.35207\include
+# src/sensitive_data.h и shared/SensitiveData.qml в git не хранятся:
+# при их отсутствии создаются из шаблонов *.example, значения затем необходимо заменить на реальные
+for(sensitive_file, $$list(src/sensitive_data.h shared/SensitiveData.qml)) {
+    !exists($$PWD/$$sensitive_file) {
+        system($$QMAKE_COPY $$shell_quote($$shell_path($$PWD/$${sensitive_file}.example)) $$shell_quote($$shell_path($$PWD/$$sensitive_file)))
+        warning("$$sensitive_file создан из шаблона $${sensitive_file}.example")
+    }
+}
 
 RESOURCES += \
     ifc_exporter.qrc \
-    shared\shared.qrc
+    shared/shared.qrc
 
 target.path = IFC_EXPORTER/ifc_exporter
 INSTALLS += target
 
-RC_ICONS = resources/icon.ico
-ICON = resources/icon.ico
+RC_ICONS = resources/ico.ico
 win32: RC_FILE = resources/ifc_exporter.rc
 
-SOURCES += main.cpp \
-    backend.cpp \
-    helper_funcs.cpp \
-    named_pipe_client.cpp
+INCLUDEPATH += src
+
+SOURCES += src/main.cpp \
+    src/backend.cpp \
+    src/helper_funcs.cpp \
+    src/named_pipe_client.cpp
 
 HEADERS += \
-    backend.h \
-    helper_funcs.h \
-    named_pipe_client.h \
-    resources/ifc_exporter.rc \
-    sensitive_data.h
+    src/backend.h \
+    src/helper_funcs.h \
+    src/named_pipe_client.h \
+    src/sensitive_data.h \
+    src/simpleini.h
 
 DISTFILES += \
     shared/RCheckBox.qml \
@@ -56,7 +63,9 @@ DISTFILES += \
     shared/PlusButtonRow.qml    \
     shared/CustomBorderRect.qml \
     shared/JWDMDatePicker.qml \
-    main.qml
+    main.qml \
+    src/sensitive_data.h.example \
+    shared/SensitiveData.qml.example
 
 CONFIG += qmltypes
 QML_IMPORT_NAME = backend

@@ -1,4 +1,4 @@
-#include "named_pipe_client.h"
+﻿#include "named_pipe_client.h"
 #include <QDebug>
 
 pipe_client::pipe_client(QString remoteServername, QObject *parent) :
@@ -11,7 +11,7 @@ pipe_client::pipe_client(QString remoteServername, QObject *parent) :
     connect(m_socket_, SIGNAL(disconnected()), this, SLOT(socket_disconnected()));
 
     connect(m_socket_, SIGNAL(readyRead()), this, SLOT(socket_read_ready()));
-    connect(m_socket_, SIGNAL(error(QLocalSocket::LocalSocketError() )), this, SLOT(socket_error(QLocalSocket::LocalSocketError() )));
+    connect(m_socket_, &QLocalSocket::errorOccurred, this, &pipe_client::socket_error);
 
 }
 

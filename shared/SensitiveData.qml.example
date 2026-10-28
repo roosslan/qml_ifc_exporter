@@ -1,0 +1,11 @@
+/*
+ * Шаблон для SensitiveData.qml (сам SensitiveData.qml в git не хранится).
+ * При первом запуске qmake файл копируется в SensitiveData.qml автоматически,
+ * после чего значения необходимо заменить на реальные.
+ */
+import QtQuick
+
+QtObject {
+    /* Имя хоста Revit Server, подставляется в поле ввода по умолчанию */
+    property string revit_server_hostname: "revit-server";
+}

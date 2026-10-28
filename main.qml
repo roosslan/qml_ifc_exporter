@@ -408,7 +408,7 @@ Rectangle {
                     id_row_additional_fields = horizontalColumn;
                     if (cbExtract3D.checked)
                     {
-                        var component = Qt.createComponent("shared\\PlusButtonRow.qml");
+                        var component = Qt.createComponent("shared/PlusButtonRow.qml");
                         var subRow = component.createObject(id_row_additional_fields, { "parentRef": mainWindow, "lvRowId":  index, "trashcanVisible": trashcanVisible,
                                                                 "plusBtnProp_3dViewText": cbProp_3DViewText, "plusBtnProp_siteNam": cbProp_siteText,
                                                                 "plusBtnProp_outputFileNam" : cbProp_filenameText, "plusBtnProp_jsonFilePath" : cbProp_jsonPathText } );
