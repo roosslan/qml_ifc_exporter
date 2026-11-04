@@ -332,3 +332,6 @@ FodyWeavers.xsd
 *.msp
 # JetBrains Rider
 *.sln.iml
+
+# Генерируется qmake
+moc_predefs.h

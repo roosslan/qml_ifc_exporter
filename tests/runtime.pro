@@ -1,0 +1,9 @@
+TEMPLATE = app
+TARGET = exporter_runtime_tests
+QT += quick qml widgets quickcontrols2 network
+CONFIG += console c++20 release
+CONFIG -= app_bundle debug
+INCLUDEPATH += ../src
+SOURCES += runtime.cpp ../src/backend.cpp ../src/helper_funcs.cpp ../src/named_pipe_client.cpp
+HEADERS += ../src/backend.h ../src/named_pipe_client.h
+RESOURCES += ../ifc_exporter.qrc ../shared/shared.qrc

@@ -14,8 +14,8 @@
 #include <qguiapplication.h>
 #include <QFileDialog>
 #include <QtCore/qabstractitemmodel.h>
-#include <QThread>
 #include <sstream>
+#include <QSaveFile>
 #include "named_pipe_client.h"
 
 BackEnd::BackEnd(QGuiApplication *parent, QObject* item, ExportQuickView* qview) {
@@ -24,26 +24,32 @@ BackEnd::BackEnd(QGuiApplication *parent, QObject* item, ExportQuickView* qview)
     m_hwnd_ = (HWND)qview->winId();
     m_qview_ = qview;
 
-    const std::uint32_t int_hwnd = reinterpret_cast<std::uint32_t>(m_hwnd_);
+    /* На x64 HWND 64-битный, поэтому приводим к quintptr, а не к uint32_t */
+    const quintptr int_hwnd = reinterpret_cast<quintptr>(m_hwnd_);
 
     std::stringstream ss;
 
     ss << std::hex << int_hwnd;
     ss >> m_str_hwnd_;
 
-    QThread* q_thread = new QThread();
-
+    /* Сервер работает в GUI-потоке: сообщений мало, а слоты обращаются к QML */
     m_server = new QTcpServer(this);
-    m_server->moveToThread(q_thread);
 
-    QString qtcp_port = read_inf_string("Manufacturer", "tcp_port");
-    int tcp_port = qtcp_port.toInt();
+    const QString qtcp_port = read_inf_string("Manufacturer", "tcp_port");
+    bool port_ok = false;
+    int tcp_port = qtcp_port.toInt(&port_ok);
+    if (!port_ok || tcp_port <= 0 || tcp_port > 65535) {
+        /* Тот же порт по умолчанию, что и у bgHelper (GetPrivateProfileIntW(..., 6777, ...)) */
+        display_log_message("| Ошибка: в " + inf_file + " не задан корректный [Manufacturer] tcp_port ('"
+                            + qtcp_port + "'), используется порт по умолчанию " + QString::number(default_tcp_port));
+        tcp_port = default_tcp_port;
+    }
 
     display_log_message("| Подключаемся к bgHelper для отображения лога...");
 
     if (!m_server->listen(QHostAddress::LocalHost, tcp_port)) {
         qDebug() << "Unable to start QTcp server: " << m_server->errorString();
-        display_log_message("| Лог bgHelper не выведется! " + m_server->errorString() + "; TCP port " + qtcp_port);
+        display_log_message("| Лог bgHelper не выведется! " + m_server->errorString() + "; TCP port " + QString::number(tcp_port));
         m_server->close();
     }
     else {
@@ -80,18 +86,30 @@ void BackEnd::discard_socket() {
         m_connection_set_.remove(*it);
     }
 
+    m_socket_buffers_.remove(q_socket);
     q_socket->deleteLater();
 }
 
 void BackEnd::read_socket() {
-    QTcpSocket* q_socket = reinterpret_cast<QTcpSocket*>(sender());
-    QByteArray qmessage = q_socket->readAll(); /* Read message */
-
-    qDebug() << "bg | " << QString(qmessage);
-
-    const std::string display_log_msg = QString(qmessage).toStdString();
-
-    display_log_message("bgHelper | " + QString::fromStdString(display_log_msg));
+    auto* socket = qobject_cast<QTcpSocket*>(sender());
+    if (socket == nullptr)
+        return;
+    auto& buffer = m_socket_buffers_[socket];
+    buffer += socket->readAll();
+    qsizetype end;
+    while ((end = buffer.indexOf('\n')) >= 0) {
+        QByteArray line = buffer.left(end);
+        buffer.remove(0, end + 1);
+        if (line.endsWith('\r'))
+            line.chop(1);
+        display_log_message("bgHelper | " + QString::fromUtf8(line));
+    }
+    /* Ограничиваем память при подключении клиента с неверным протоколом. */
+    if (buffer.size() > 1024 * 1024) {
+        display_log_message("| Ошибка TCP: строка лога превышает 1 МиБ, соединение закрыто");
+        buffer.clear();
+        socket->abort();
+    }
 }
 
 void BackEnd::display_error(QAbstractSocket::SocketError socket_error) {
@@ -113,11 +131,14 @@ void BackEnd::display_error(QAbstractSocket::SocketError socket_error) {
 
 /* Adds and displays a message in the LOG-listbox */
 void BackEnd::display_log_message(const QString& qstr_msg) {
-    const QQuickItem* lv_log = m_item->findChild<QQuickItem*>("o_lvLog");
-    QObject* lm_log = lv_log->children()[1];
+    QObject* lm_log = m_item != nullptr ? m_item->findChild<QAbstractListModel*>("model_log") : nullptr;
+    if (lm_log == nullptr) {
+        qDebug() << "Log ListView not found, message:" << qstr_msg;
+    }
     QVariant returned_value;
     const QVariant lm_msg = qstr_msg;
-    QMetaObject::invokeMethod(lm_log, "add_to_log_listview",  /* add_row function defined in QML-file */
+    if (lm_log != nullptr)
+        QMetaObject::invokeMethod(lm_log, "add_to_log_listview",  /* add_row function defined in QML-file */
                               Q_RETURN_ARG(QVariant, returned_value),
                               Q_ARG(QVariant, lm_msg));
 
@@ -139,9 +160,7 @@ void BackEnd::display_log_message(const QString& qstr_msg) {
 void BackEnd::slot_copy_to_clipboard_pressed() {
     QClipboard *clipboard = QGuiApplication::clipboard();
     QString text_for_clipboard = "";
-    const QQuickItem* lv_log = m_item->findChild<QQuickItem*>("o_lvLog");
-    QObject* lm_log = lv_log->children()[1];
-    QAbstractListModel* qml_log_model = qobject_cast<QAbstractListModel*>(lm_log);
+    QAbstractListModel* qml_log_model = (m_item != nullptr ? m_item->findChild<QAbstractListModel*>("model_log") : nullptr);
 
     if (qml_log_model != nullptr) {
         for (int i = 0; i < qml_log_model->rowCount(); ++i) {
@@ -158,14 +177,37 @@ void BackEnd::slot_stop_clicked() {
     qDebug() << "The control flag 'Enabled' was set to false";
 }
 
-void BackEnd::delete_inf_section(const QString& section_name) {
-    /* Так как все INI-файлы для WritePrivateProfileStringW всегда ANSI, пишем сами - как UTF8 с русскими символами */
+bool BackEnd::load_config(bool allow_missing) {
+    m_config_file_.Reset();
     m_config_file_.SetUnicode();
-    SI_Error rc = m_config_file_.LoadFile(inf_file.toStdString().c_str());
-    /* if (rc < 0){ qDebug() << "Cannot open INF-file " << infFile; }; */
+    if (allow_missing && !QFile::exists(inf_file))
+        return true;
+    const SI_Error rc = m_config_file_.LoadFile(inf_file.toStdWString().c_str());
+    if (rc < 0) {
+        display_log_message("| Ошибка чтения INF: " + inf_file + "; код " + QString::number(rc));
+        return false;
+    }
+    return true;
+}
 
+bool BackEnd::save_config() {
+    std::string data;
+    const SI_Error rc = m_config_file_.Save(data);
+    QSaveFile file(inf_file);
+    if (rc < 0 || !file.open(QIODevice::WriteOnly)
+        || file.write(data.data(), static_cast<qint64>(data.size())) != static_cast<qint64>(data.size())
+        || !file.commit()) {
+        display_log_message("| Ошибка сохранения INF: " + inf_file + "; " + file.errorString());
+        return false;
+    }
+    return true;
+}
+
+void BackEnd::delete_inf_section(const QString& section_name) {
+    if (!load_config(true))
+        return;
     m_config_file_.Delete(section_name.toStdWString().c_str(), nullptr);
-    rc = m_config_file_.SaveFile(inf_file.toStdString().c_str(), false);
+    save_config();
 }
 
 void BackEnd::delete_inf_key_by_value(const QString& section_name, const QString& value) {
@@ -182,41 +224,35 @@ void BackEnd::delete_inf_key_by_value(const QString& section_name, const QString
         }
 
     if (key_to_remove != "") {
-        m_config_file_.SetUnicode();
-        SI_Error rc = m_config_file_.LoadFile(inf_file.toStdString().c_str());
+        if (!load_config())
+            return;
         m_config_file_.Delete(section_name.toStdWString().c_str(), key_to_remove.toStdWString().c_str());
-        rc = m_config_file_.SaveFile(inf_file.toStdString().c_str(), false);
+        save_config();
     }
 }
 
 void BackEnd::write_inf_string(const QString& section_name, const QString& key_name, const QString& value) {
-    /* Так как все INI-файлы для WritePrivateProfileStringW всегда ANSI, пишем сами - как UTF8 с русскими символами */
-    m_config_file_.SetUnicode();
-    SI_Error rc = m_config_file_.LoadFile(inf_file.toStdString().c_str());
-    /* if (rc < 0){ qDebug() << "Cannot open INF-file " << infFile; }; */
-
-    /* Такой wrapper получился после замены WritePrivateProfileStringW на ф-ции simpleini */
-    m_config_file_.SetValue(section_name.toStdWString().c_str(), key_name.toStdWString().c_str(), value.toStdWString().c_str());
-    rc = m_config_file_.SaveFile(inf_file.toStdString().c_str(), false);
+    if (!load_config(true))
+        return;
+    const SI_Error rc = m_config_file_.SetValue(section_name.toStdWString().c_str(), key_name.toStdWString().c_str(), value.toStdWString().c_str());
+    if (rc < 0) {
+        display_log_message("| Ошибка изменения INF: " + inf_file + "; код " + QString::number(rc));
+        return;
+    }
+    save_config();
 }
 
 QString BackEnd::read_inf_string(const QString& section_name, const QString& key_name) {
-    m_config_file_.SetUnicode();
-    SI_Error rc = m_config_file_.LoadFile(inf_file.toStdString().c_str());
-    /* if (rc < 0){ qDebug() << "Cannot open INF-file " << infFile; }; */
-
-    const auto wc_val = m_config_file_.GetValue(section_name.toStdWString().c_str(), key_name.toStdWString().c_str(), L"ОШИБКА_ЧТЕНИЯ_ПУТИ_КАТАЛОГА");
-    const QString q_ret = QString::fromWCharArray(wc_val);
-    return q_ret;
+    if (!load_config(true))
+        return {};
+    return QString::fromWCharArray(m_config_file_.GetValue(section_name.toStdWString().c_str(), key_name.toStdWString().c_str(), L"ОШИБКА_ЧТЕНИЯ_ПУТИ_КАТАЛОГА"));
 }
 
 /* Для загрузки всего содержимого секции [SourceDisksFiles] */
 QKeysValues BackEnd::get_section_keys_and_values(const QString& section_name) {
     QKeysValues rret;
-    m_config_file_.SetUnicode();
-
-    qDebug() << "Checking if the section [SourceDisksFiles] exists in the .inf file";
-    const SI_Error rc = m_config_file_.LoadFile(inf_file.toStdString().c_str());
+    if (!load_config(true))
+        return rret;
     if(!m_config_file_.SectionExists(section_name.toStdWString().c_str())) {
         const QKeysValues qkv_nullptr_list = {};
         return qkv_nullptr_list;
@@ -232,7 +268,8 @@ QKeysValues BackEnd::get_section_keys_and_values(const QString& section_name) {
 }
 
 const bool BackEnd::str2bool(const QString& bool_as_str) {
-    bool bret;
+    /* При ошибке разбора operator>> не всегда записывает значение, поэтому по умолчанию false */
+    bool bret = false;
     std::istringstream(bool_as_str.toStdString()) >> std::boolalpha >> bret;
     return bret;
 }
@@ -415,8 +452,8 @@ void BackEnd::load_sav_file_into_main_list(const QString &sav_file){
 void BackEnd::fill_combobox_sav_files() {
     QVariant returned_value;
     /* sav'ы добавляем в выпадающий список */
-    m_config_file_.SetUnicode();
-    SI_Error rc = m_config_file_.LoadFile(inf_file.toStdString().c_str());
+    if (!load_config(true))
+        return;
     QString section_name = "SourceDisksNames.amd64";
 
     const CSimpleIniW::TKeyVal* sav_files = m_config_file_.GetSection(section_name.toStdWString().c_str());
@@ -448,58 +485,59 @@ void BackEnd::slot_clear_log_files() {
     display_log_message("| Файлы журналов очищены");
 }
 
-void BackEnd::slot_run_clicked(const int right_now, const QString& utime, const QString& udate){
-    delete_inf_section("SourceDisksFiles");
+void BackEnd::report_launch_error(const QString& message) {
+    display_log_message("| Запуск отменён: " + message);
+    emit launch_failed();
+}
 
-    write_inf_string("ControlFlags", "Time", utime);
-    write_inf_string("ControlFlags", "Date", udate);
+void BackEnd::slot_run_clicked(const int right_now, const QString& utime, const QString& udate) {
+    if (m_item == nullptr) {
+        report_launch_error("не загружен интерфейс QML");
+        return;
+    }
+    const auto* version = m_item->findChild<QQuickItem*>("combo_revit_version");
+    const auto* ifc = m_item->findChild<QQuickItem*>("cbIFC");
+    const auto* navi = m_item->findChild<QQuickItem*>("cbNavi");
+    const auto* path = m_item->findChild<QQuickItem*>("text_IFCPath");
+    const auto* files = m_item->findChild<QAbstractListModel*>("model_files");
+    if (version == nullptr || ifc == nullptr || navi == nullptr || path == nullptr || files == nullptr || files->rowCount() == 0) {
+        report_launch_error("не найдены элементы настроек или список файлов пуст");
+        return;
+    }
+    if (!load_config(true)) {
+        report_launch_error("не удалось прочитать INF");
+        return;
+    }
 
-    const QQuickItem* qcb_rvt_version = m_item->findChild<QQuickItem*>("row_RvtVersion");
-    QObject* cb_rvt_version = qcb_rvt_version->children()[1];
-    const QString revit_version = cb_rvt_version->property("currentText").toString();
-    write_inf_string("ControlFlags", "RevitVersion", revit_version);
-
-    const QQuickItem* qcheckbox_ifc = m_item->findChild<QQuickItem*>("cbIFC");
-    bool is_checkbox_ifc_checked = qcheckbox_ifc->property("checked").toBool();
-    const QString s_ifc_checked = QVariant(is_checkbox_ifc_checked).toString();
-    write_inf_string("RVT", "IFC", s_ifc_checked);
-
-    const QQuickItem* checkbox_navi = m_item->findChild<QQuickItem*>("cbNavi");
-    bool is_checkbox_navi_checked = checkbox_navi->property("checked").toBool();
-    const QString s_navi_checked = QVariant(is_checkbox_navi_checked).toString();
-    write_inf_string("RVT", "NWC", s_navi_checked);
-
-    const QQuickItem* qquick_text_ifc_path = m_item->findChild<QQuickItem*>("text_IFCPath");
-    const QString s_ifc_path = qquick_text_ifc_path->property("text").toString();
-    write_inf_string("DestinationDirs", "DefaultDestDir", s_ifc_path);
-
-    const QQuickItem* lv_main = m_item->findChild<QQuickItem*>("o_lvMain");
-    QObject* list_model = lv_main->children()[1];
-    QAbstractListModel* qml_list_model = qobject_cast<QAbstractListModel*>(list_model);
-
-    if (qml_list_model != nullptr) {
-        for (int i = 0; i < qml_list_model->rowCount(); ++i) {
-            const QString rvt_file_name = qml_list_model->data(qml_list_model->index(i, 0), 0).toString();
-            const QString should_be_exported = qml_list_model->data(qml_list_model->index(i, 0), 1).toString();
-            write_inf_string("SourceDisksFiles", rvt_file_name.trimmed(), should_be_exported);
+    /* Меняем конфигурацию в памяти и сохраняем целиком до отправки команды. */
+    bool valid = true;
+    const auto set = [this, &valid](const QString& section, const QString& key, const QString& value) {
+        if (m_config_file_.SetValue(section.toStdWString().c_str(), key.toStdWString().c_str(), value.toStdWString().c_str()) < 0)
+            valid = false;
+    };
+    m_config_file_.Delete(L"SourceDisksFiles", nullptr);
+    set("ControlFlags", "Time", right_now ? QString() : utime);
+    set("ControlFlags", "Date", right_now ? QString() : udate);
+    set("ControlFlags", "RevitVersion", version->property("currentText").toString());
+    set("RVT", "IFC", ifc->property("checked").toBool() ? "true" : "false");
+    set("RVT", "NWC", navi->property("checked").toBool() ? "true" : "false");
+    set("DestinationDirs", "DefaultDestDir", path->property("text").toString());
+    for (int i = 0; i < files->rowCount(); ++i)
+        set("SourceDisksFiles", files->data(files->index(i, 0), 0).toString().trimmed(), files->data(files->index(i, 0), 1).toString());
+    set("ControlFlags", "Enabled", "true");
+    if (!valid || !save_config()) {
+        report_launch_error("не удалось сохранить настройки экспорта");
+        return;
+    }
+    if (right_now) {
+        if (m_pipe_client_ == nullptr) {
+            m_pipe_client_ = new pipe_client("\\\\.\\pipe\\bghelperpipe", this);
+            connect(m_pipe_client_, &pipe_client::send_failed, this, [this](const QString& message) {
+                write_inf_string("ControlFlags", "Enabled", "false");
+                report_launch_error(message);
+            });
         }
-    }
-    else {
-        qDebug() << "Getting *.RVT files list is failed!";
-    }
-
-    views_and_sites_file = read_inf_string("Manufacturer", "sav_file_for_export");
-    write_inf_string("ControlFlags", "Enabled", "true");
-    qDebug() << "The control flag 'Enabled' was set to true";
-
-    /* Запустить ПРЯМО сейчас! == 1 */
-    if(right_now) {
-        pipe_client* local_pipe = new pipe_client("\\\\.\\pipe\\bghelperpipe", this);
-
-        /* Чтобы не происходил повторный запуск (уже по совпадению даты/времени) */
-        write_inf_string("ControlFlags", "Date", "21.06.2026");
-
-        local_pipe->send_message_to_server("START_IMMEDIATELY");
+        m_pipe_client_->send_message_to_server("START_IMMEDIATELY");
     }
 }
 

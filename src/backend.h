@@ -1,4 +1,4 @@
-/* last changed 27.5.2026 */
+﻿/* last changed 27.5.2026 */
 
 #ifndef BACKEND_H
 #define BACKEND_H
@@ -23,8 +23,12 @@
 
 /* forward declaration */
 class ExportQuickView;
+class pipe_client;
 
 typedef QList<std::pair<QString, QString> > QKeysValues;
+
+/* Порт TCP-сервера для лога bgHelper, если в INF его нет (как в bgHelper) */
+constexpr int default_tcp_port = 6777;
 
 struct to_restore
 {
@@ -47,6 +51,8 @@ class BackEnd : public QObject
     HWND m_hwnd_;
     std::string m_str_hwnd_; /* Для передачи в окно IFCSettings */
     QTcpServer* m_server;
+    /* Клиент канала до bgHelper: создаётся при первом запуске "прямо сейчас" и переиспользуется */
+    pipe_client* m_pipe_client_ = nullptr;
 
     QString m_app_data_ = get_env("appdata");
 
@@ -54,9 +60,14 @@ class BackEnd : public QObject
     CSimpleIniW m_config_file_;
 
     QSet<QTcpSocket*> m_connection_set_;
+    QHash<QTcpSocket*, QByteArray> m_socket_buffers_;
+    bool load_config(bool allow_missing = false);
+    bool save_config();
+    void report_launch_error(const QString& message);
     const QString ifc_exporter_directory = QDir::homePath() + "/AppData/Roaming/" + qml_app_directory;
 signals:
     void new_message(const QString);
+    void launch_failed();
 private slots:
     void new_socket_connection();
     void append_to_socket_list(QTcpSocket* socket);
@@ -105,10 +116,15 @@ class ExportQuickView : public QQuickView
     Q_OBJECT
 public:
     explicit ExportQuickView(QWindow *parent = nullptr) : QQuickView(parent) {}
-    BackEnd* backend_ruler;
+    BackEnd* backend_ruler = nullptr;
 protected:
     void closeEvent(QCloseEvent *event) override
     {
+        /* Если QML не загрузился или BackEnd ещё не создан - сохранять нечего */
+        if (rootObject() == nullptr || backend_ruler == nullptr) {
+            event->accept();
+            return;
+        }
         QVariant returned_value;
         QMetaObject::invokeMethod(rootObject(), "get_rows_wo_views_n_sites",
                               Q_RETURN_ARG(QVariant, returned_value));
@@ -116,9 +132,7 @@ protected:
         /* если ListView со списком файлов вернул 0 по позициям со вьюхами, то очищаем секцию в .INF */
         if(rows_wo_views_n_sites != 0)
         {
-            const QQuickItem* lv_main = rootObject()->findChild<QQuickItem*>("o_lvMain");
-            QObject* list_model = lv_main->children()[1];
-            QAbstractListModel* qml_list_model = qobject_cast<QAbstractListModel*>(list_model);
+            QAbstractListModel* qml_list_model = qobject_cast<QAbstractListModel*>(rootObject()->findChild<QAbstractListModel*>("model_files"));
 
             if (qml_list_model != nullptr) {
                 for (int i = 0; i < qml_list_model->rowCount(); ++i) {
