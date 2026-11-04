@@ -30,18 +30,6 @@ typedef QList<std::pair<QString, QString> > QKeysValues;
 /* Порт TCP-сервера для лога bgHelper, если в INF его нет (как в bgHelper) */
 constexpr int default_tcp_port = 6777;
 
-/* Второй дочерний объект QML-элемента (у ListView это модель, у row_RvtVersion - ComboBox).
- * Возвращает nullptr, если элемент не найден или дочерних объектов меньше двух */
-inline QObject* qml_child_model(const QObject* root, const char* object_name)
-{
-    const QQuickItem* qml_item = root != nullptr ? root->findChild<QQuickItem*>(object_name) : nullptr;
-    if (qml_item == nullptr || qml_item->children().size() < 2) {
-        qDebug() << "QML item not found or has no model:" << object_name;
-        return nullptr;
-    }
-    return qml_item->children()[1];
-}
-
 struct to_restore
 {
     QString fname;
@@ -72,9 +60,14 @@ class BackEnd : public QObject
     CSimpleIniW m_config_file_;
 
     QSet<QTcpSocket*> m_connection_set_;
+    QHash<QTcpSocket*, QByteArray> m_socket_buffers_;
+    bool load_config(bool allow_missing = false);
+    bool save_config();
+    void report_launch_error(const QString& message);
     const QString ifc_exporter_directory = QDir::homePath() + "/AppData/Roaming/" + qml_app_directory;
 signals:
     void new_message(const QString);
+    void launch_failed();
 private slots:
     void new_socket_connection();
     void append_to_socket_list(QTcpSocket* socket);
@@ -139,7 +132,7 @@ protected:
         /* если ListView со списком файлов вернул 0 по позициям со вьюхами, то очищаем секцию в .INF */
         if(rows_wo_views_n_sites != 0)
         {
-            QAbstractListModel* qml_list_model = qobject_cast<QAbstractListModel*>(qml_child_model(rootObject(), "o_lvMain"));
+            QAbstractListModel* qml_list_model = qobject_cast<QAbstractListModel*>(rootObject()->findChild<QAbstractListModel*>("model_files"));
 
             if (qml_list_model != nullptr) {
                 for (int i = 0; i < qml_list_model->rowCount(); ++i) {

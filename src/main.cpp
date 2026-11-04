@@ -79,6 +79,9 @@ int main (int argc, char* argv[])
 
     BackEnd backend_rula(&qgui_app, item, &q_view);
     q_view.backend_ruler = &backend_rula;
+    QObject::connect(&backend_rula, &BackEnd::launch_failed, item, [item]() {
+        QMetaObject::invokeMethod(item, "launch_failed");
+    });
 
     /* Передаем экземпляр класса в Qml: */
     q_view.rootContext()->setContextProperty("backend", &backend_rula);

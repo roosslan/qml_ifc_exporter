@@ -67,6 +67,11 @@ function stop_clicked() {
     items_enabled = true;
 }
 
+function launch_failed() {
+    items_enabled = true;
+    btnStop.enabled = false;
+}
+
 function show_message_box() {
     message_dialog.open();
 }
@@ -451,6 +456,7 @@ Rectangle {
         }
         model: ListModel {
             id: listModel;
+            objectName: "model_files";
 /*
             ListElement {
                 path: "C:\\Projects\\Autodesk\\wall.rvt"; shouldExport: true;
@@ -539,6 +545,7 @@ Rectangle {
 
         model: ListModel {
             id: lmLogModel;
+            objectName: "model_log";
             ListElement {
                 msg: "";
             }
@@ -580,9 +587,9 @@ Rectangle {
                     var selectedTime = new Date().toLocaleString(Qt.locale(),"hh:mm");
                     save_views_and_sites_to_file();
                     lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Запуск прямо сейчас (в " +  selectedTime + ")"});
-                    signal_run_clicked(1, selectedTime, new Date().toLocaleString(Qt.locale(),"dd.MM.yyyy"));   /* "1" - запустить прямо сейчас */
                     items_enabled = false;
                     btnStop.enabled = true;
+                    signal_run_clicked(1, selectedTime, new Date().toLocaleString(Qt.locale(),"dd.MM.yyyy"));   /* "1" - запустить прямо сейчас */
                 }
             }
             MenuItem {
@@ -592,9 +599,9 @@ Rectangle {
                     var selectedTime = uTime.getTime();
                     save_views_and_sites_to_file();
                     lmLogModel.append({"msg": new Date().toLocaleTimeString() + " | Назначенное время " + selectedDate + ", " + selectedTime.hour.toString() + ":" + selectedTime.minute.toString()});
-                    signal_run_clicked(0, selectedTime.hour.toString() + ":" + selectedTime.minute.toString(), selectedDate);
                     items_enabled = false;
                     btnStop.enabled = true;
+                    signal_run_clicked(0, selectedTime.hour.toString() + ":" + selectedTime.minute.toString(), selectedDate);
                 }
             }
         }
@@ -703,6 +710,7 @@ Rectangle {
 
         ComboBox {
             id: cbVersion;
+            objectName: "combo_revit_version";
             editable: false;
             enabled: items_enabled;
             anchors.left: labelRevitVersion.right;

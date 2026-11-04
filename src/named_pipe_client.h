@@ -1,7 +1,8 @@
-#ifndef NAMED_PIPE_CLIENT_H
+﻿#ifndef NAMED_PIPE_CLIENT_H
 #define NAMED_PIPE_CLIENT_H
 
 #include <QObject>
+#include <QTimer>
 #include <QtNetwork/QLocalSocket>
 #include <QLocalSocket>
 #include <QLocalServer>
@@ -17,6 +18,7 @@ public:
 
 signals:
     void signal_server_response(QString);
+    void send_failed(const QString& message);
 
 public slots:
     void send_message_to_server(QString message);
@@ -29,7 +31,9 @@ public slots:
 
 private:
     QLocalSocket* m_socket_;
-    quint16 m_block_size_;
+    QTimer m_send_timeout_;
+    qint64 m_bytes_remaining_ = 0;
+    bool m_sending_ = false;
     QString m_message_;
     QString m_server_name_;
 };
