@@ -98,7 +98,10 @@ int main (int argc, char* argv[])
     /* Чтобы пользователь был уверен, что путь с последнего сеанса сохранился: */
     const QString export_directory = backend_rula.read_inf_string("DestinationDirs", "DefaultDestDir");
     QQuickItem* qquick_text_ifc_path = item->findChild<QQuickItem*>("text_IFCPath");
-    qquick_text_ifc_path->setProperty("text", export_directory);
+    if (qquick_text_ifc_path != nullptr)
+        qquick_text_ifc_path->setProperty("text", export_directory);
+    else
+        qDebug() << "QML item text_IFCPath not found";
 
     backend_rula.fill_combobox_sav_files();
 

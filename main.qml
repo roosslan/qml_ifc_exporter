@@ -555,7 +555,7 @@ Rectangle {
 
     RoundButton {
         id: btnSaveTrueToConfig;
-        objectName: btnRun;
+        objectName: "btnRun";
         enabled: mainWindow.items_enabled;
         anchors.right: parent.right;
         anchors.bottom: parent.bottom;

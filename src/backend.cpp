@@ -14,7 +14,6 @@
 #include <qguiapplication.h>
 #include <QFileDialog>
 #include <QtCore/qabstractitemmodel.h>
-#include <QThread>
 #include <sstream>
 #include "named_pipe_client.h"
 
@@ -24,26 +23,32 @@ BackEnd::BackEnd(QGuiApplication *parent, QObject* item, ExportQuickView* qview)
     m_hwnd_ = (HWND)qview->winId();
     m_qview_ = qview;
 
-    const std::uint32_t int_hwnd = reinterpret_cast<std::uint32_t>(m_hwnd_);
+    /* На x64 HWND 64-битный, поэтому приводим к quintptr, а не к uint32_t */
+    const quintptr int_hwnd = reinterpret_cast<quintptr>(m_hwnd_);
 
     std::stringstream ss;
 
     ss << std::hex << int_hwnd;
     ss >> m_str_hwnd_;
 
-    QThread* q_thread = new QThread();
-
+    /* Сервер работает в GUI-потоке: сообщений мало, а слоты обращаются к QML */
     m_server = new QTcpServer(this);
-    m_server->moveToThread(q_thread);
 
-    QString qtcp_port = read_inf_string("Manufacturer", "tcp_port");
-    int tcp_port = qtcp_port.toInt();
+    const QString qtcp_port = read_inf_string("Manufacturer", "tcp_port");
+    bool port_ok = false;
+    int tcp_port = qtcp_port.toInt(&port_ok);
+    if (!port_ok || tcp_port <= 0 || tcp_port > 65535) {
+        /* Тот же порт по умолчанию, что и у bgHelper (GetPrivateProfileIntW(..., 6777, ...)) */
+        display_log_message("| Ошибка: в " + inf_file + " не задан корректный [Manufacturer] tcp_port ('"
+                            + qtcp_port + "'), используется порт по умолчанию " + QString::number(default_tcp_port));
+        tcp_port = default_tcp_port;
+    }
 
     display_log_message("| Подключаемся к bgHelper для отображения лога...");
 
     if (!m_server->listen(QHostAddress::LocalHost, tcp_port)) {
         qDebug() << "Unable to start QTcp server: " << m_server->errorString();
-        display_log_message("| Лог bgHelper не выведется! " + m_server->errorString() + "; TCP port " + qtcp_port);
+        display_log_message("| Лог bgHelper не выведется! " + m_server->errorString() + "; TCP port " + QString::number(tcp_port));
         m_server->close();
     }
     else {
@@ -113,8 +118,11 @@ void BackEnd::display_error(QAbstractSocket::SocketError socket_error) {
 
 /* Adds and displays a message in the LOG-listbox */
 void BackEnd::display_log_message(const QString& qstr_msg) {
-    const QQuickItem* lv_log = m_item->findChild<QQuickItem*>("o_lvLog");
-    QObject* lm_log = lv_log->children()[1];
+    QObject* lm_log = qml_child_model(m_item, "o_lvLog");
+    if (lm_log == nullptr) {
+        qDebug() << "Log ListView not found, message:" << qstr_msg;
+        return;
+    }
     QVariant returned_value;
     const QVariant lm_msg = qstr_msg;
     QMetaObject::invokeMethod(lm_log, "add_to_log_listview",  /* add_row function defined in QML-file */
@@ -139,9 +147,7 @@ void BackEnd::display_log_message(const QString& qstr_msg) {
 void BackEnd::slot_copy_to_clipboard_pressed() {
     QClipboard *clipboard = QGuiApplication::clipboard();
     QString text_for_clipboard = "";
-    const QQuickItem* lv_log = m_item->findChild<QQuickItem*>("o_lvLog");
-    QObject* lm_log = lv_log->children()[1];
-    QAbstractListModel* qml_log_model = qobject_cast<QAbstractListModel*>(lm_log);
+    QAbstractListModel* qml_log_model = qobject_cast<QAbstractListModel*>(qml_child_model(m_item, "o_lvLog"));
 
     if (qml_log_model != nullptr) {
         for (int i = 0; i < qml_log_model->rowCount(); ++i) {
@@ -232,7 +238,8 @@ QKeysValues BackEnd::get_section_keys_and_values(const QString& section_name) {
 }
 
 const bool BackEnd::str2bool(const QString& bool_as_str) {
-    bool bret;
+    /* При ошибке разбора operator>> не всегда записывает значение, поэтому по умолчанию false */
+    bool bret = false;
     std::istringstream(bool_as_str.toStdString()) >> std::boolalpha >> bret;
     return bret;
 }
@@ -454,28 +461,30 @@ void BackEnd::slot_run_clicked(const int right_now, const QString& utime, const 
     write_inf_string("ControlFlags", "Time", utime);
     write_inf_string("ControlFlags", "Date", udate);
 
-    const QQuickItem* qcb_rvt_version = m_item->findChild<QQuickItem*>("row_RvtVersion");
-    QObject* cb_rvt_version = qcb_rvt_version->children()[1];
+    const QObject* cb_rvt_version = qml_child_model(m_item, "row_RvtVersion");
+    const QQuickItem* qcheckbox_ifc = m_item->findChild<QQuickItem*>("cbIFC");
+    const QQuickItem* checkbox_navi = m_item->findChild<QQuickItem*>("cbNavi");
+    const QQuickItem* qquick_text_ifc_path = m_item->findChild<QQuickItem*>("text_IFCPath");
+    if (cb_rvt_version == nullptr || qcheckbox_ifc == nullptr || checkbox_navi == nullptr || qquick_text_ifc_path == nullptr) {
+        display_log_message("| Ошибка: в main.qml не найдены элементы настроек выгрузки, запуск отменён");
+        return;
+    }
+
     const QString revit_version = cb_rvt_version->property("currentText").toString();
     write_inf_string("ControlFlags", "RevitVersion", revit_version);
 
-    const QQuickItem* qcheckbox_ifc = m_item->findChild<QQuickItem*>("cbIFC");
     bool is_checkbox_ifc_checked = qcheckbox_ifc->property("checked").toBool();
     const QString s_ifc_checked = QVariant(is_checkbox_ifc_checked).toString();
     write_inf_string("RVT", "IFC", s_ifc_checked);
 
-    const QQuickItem* checkbox_navi = m_item->findChild<QQuickItem*>("cbNavi");
     bool is_checkbox_navi_checked = checkbox_navi->property("checked").toBool();
     const QString s_navi_checked = QVariant(is_checkbox_navi_checked).toString();
     write_inf_string("RVT", "NWC", s_navi_checked);
 
-    const QQuickItem* qquick_text_ifc_path = m_item->findChild<QQuickItem*>("text_IFCPath");
     const QString s_ifc_path = qquick_text_ifc_path->property("text").toString();
     write_inf_string("DestinationDirs", "DefaultDestDir", s_ifc_path);
 
-    const QQuickItem* lv_main = m_item->findChild<QQuickItem*>("o_lvMain");
-    QObject* list_model = lv_main->children()[1];
-    QAbstractListModel* qml_list_model = qobject_cast<QAbstractListModel*>(list_model);
+    QAbstractListModel* qml_list_model = qobject_cast<QAbstractListModel*>(qml_child_model(m_item, "o_lvMain"));
 
     if (qml_list_model != nullptr) {
         for (int i = 0; i < qml_list_model->rowCount(); ++i) {
@@ -494,12 +503,13 @@ void BackEnd::slot_run_clicked(const int right_now, const QString& utime, const 
 
     /* Запустить ПРЯМО сейчас! == 1 */
     if(right_now) {
-        pipe_client* local_pipe = new pipe_client("\\\\.\\pipe\\bghelperpipe", this);
+        if (m_pipe_client_ == nullptr)
+            m_pipe_client_ = new pipe_client("\\\\.\\pipe\\bghelperpipe", this);
 
         /* Чтобы не происходил повторный запуск (уже по совпадению даты/времени) */
         write_inf_string("ControlFlags", "Date", "21.06.2026");
 
-        local_pipe->send_message_to_server("START_IMMEDIATELY");
+        m_pipe_client_->send_message_to_server("START_IMMEDIATELY");
     }
 }
 
